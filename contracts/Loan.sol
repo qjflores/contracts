@@ -1,26 +1,25 @@
 pragma solidity ^0.4.0;
 
-contract Loan {
-  struct Terms {
-    uint principal;
-    uint apr;
-    uint termLengthMonths;
-    bytes32 amortizationSchedule;
-  }
+import "./DSMath.sol";
 
-  Terms public terms;
-  address borrower;
-  address attestor;
+contract Loan {
+  uint public principal;
+  uint public interestRateMonthly;
+  uint public termLengthMonths;
+  bytes32 public amortizationSchedule;
+
+  address public borrower;
+  address public attestor;
 
   mapping(address => uint) public amountInvested;
 
-  function Loan(address attestorAddr, uint principal, uint apr,
-    uint termLengthMonths, bytes32 amortizationSchedule) {
+  function Loan(address _attestorAddr, uint _principal, uint _interestRateMonthly,
+    uint _termLengthMonths, bytes32 _amortizationSchedule) {
     borrower = msg.sender;
-    attestor = attestorAddr;
-    terms.principal = principal;
-    terms.apr = apr;
-    terms.termLengthMonths = termLengthMonths;
-    terms.amortizationSchedule = amortizationSchedule;
+    attestor = _attestorAddr;
+    principal = _principal;
+    interestRateMonthly = _interestRateMonthly;
+    termLengthMonths = _termLengthMonths;
+    amortizationSchedule = _amortizationSchedule;
   }
 }
