@@ -1,0 +1,15 @@
+{
+  "contract_name": "Loan",
+  "abi": [],
+  "unlinked_binary": "0x6060604052346000575b60358060166000396000f30060606040525b60005600a165627a7a723058203277b38f315c40f989cc65a6e0d98df67cc40bf67f067be4cfb0ffd0b014af920029",
+  "networks": {
+    "1493251596276": {
+      "events": {},
+      "links": {},
+      "address": "0xc71d8bf396686e81855bba0468fda87cb8e96169",
+      "updated_at": 1493252336192
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1493252336192
+}
