@@ -3,23 +3,42 @@ var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 var Loan = artifacts.require("./Loan.sol");
 
-contract('Loan', function(accounts) {
+PeriodType = {
+  Weekly: 0,
+  Monthly: 1,
+  Yearly: 2,
+  FixedDate: 3
+}
+
+const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
+                      web3.toWei(.05, 'ether'), true, 2];
+contract('Loan', function(_accounts) {
+  accounts = _accounts;
   it("should deploy with the correct terms and RAA PK", function() {
-    return Loan.deployed().then(function(instance) {
+    return Loan.new(...[accounts[1]].concat(LOAN_TERMS)).then(function(instance) {
       loan = instance;
       return loan.principal.call();
     }).then(function(principal) {
-      assert.equal(principal, web3.toWei(1, 'ether'));
-      return loan.interestRateMonthly.call();
-    }).then(function(interestRateMonthly) {
-      assert.equal(interestRateMonthly, 6);
-      return loan.termLengthMonths.call();
-    }).then(function(termLengthMonths) {
-      assert.equal(termLengthMonths, 3);
-      return loan.amortizationSchedule.call();
-    }).then(function(amortizationSchedule) {
-      assert.equal(web3.toAscii(amortizationSchedule).replace(/\0/g, ''), "monthly");
-    })
+      assert.equal(principal.toNumber(), LOAN_TERMS[0]);
+      return loan.periodType.call();
+    }).then(function(periodType) {
+      assert.equal(periodType, LOAN_TERMS[1]);
+      return loan.interestRate.call();
+    }).then(function(interestRate) {
+      assert.equal(interestRate, LOAN_TERMS[2]);
+      return loan.isInterestCompounded.call();
+    }).then(function(isInterestCompounded) {
+      assert.equal(isInterestCompounded, LOAN_TERMS[3]);
+      return loan.termLength.call();
+    }).then(function(termLength) {
+      assert.equal(termLength, LOAN_TERMS[4])
+      return loan.borrower.call();
+    }).then(function(borrower) {
+      assert.equal(borrower, accounts[0]);
+      return loan.attestor.call();
+    }).then(function(attestor) {
+      assert.equal(attestor, accounts[1]);
+    });
   });
   // it("should allow an RAA to attest to the loan");
   // it("should allow an investor to fund the loan");
