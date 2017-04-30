@@ -11,7 +11,7 @@
 
 pragma solidity ^0.4.8;
 
-contract DSMath {
+library DSMath {
 
     /*
     standard uint256 functions
