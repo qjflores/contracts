@@ -15,6 +15,13 @@ function assertThrows(promise, message, returnFn=null) {
   });
 }
 
+function verifyEvent(log, expectedLog) {
+  assert.equal(log.event, expectedLog.event);
+  Object.keys(expectedLog.args).forEach(function(key, index) {
+    assert.equal(log.args[key], expectedLog.args[key]);
+  });
+}
+
 PeriodType = {
   Weekly: 0,
   Monthly: 1,
@@ -31,7 +38,7 @@ PeriodType = {
 */
 const TEST_RPC_GAS_PRICE = web3.toBigNumber('100000000000');
 const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
-                      web3.toWei(.05, 'ether'), true, 2];
+                      web3.toWei(.05, 'ether'), true, 2, 1493594766994];
 contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
@@ -79,6 +86,9 @@ contract('Loan', function(_accounts) {
       assert.equal(attestationUrl, '0x');
       return loan.attestToBorrower(ipfs_url, {from: accounts[1]});
     }).then(function(result) {
+      verifyEvent(result.logs[0], { event: "LoanAttested",
+                                    args: {}
+                                  });
       return loan.attestationUrl.call();
     }).then(function(attestationUrl) {
       assert.equal(web3.toAscii(attestationUrl), ipfs_url);
@@ -87,6 +97,11 @@ contract('Loan', function(_accounts) {
 
   it("should allow investor 1 to fund loan once it's been attested", function() {
     return loan.fundLoan({from: accounts[2], value: web3.toWei(1, 'ether')}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "Investment",
+                                    args: {
+                                      _from: accounts[2],
+                                      _value: web3.toWei(1, 'ether')
+                                    }});
       return loan.amountInvested.call(accounts[2]);
     }).then(function(amount) {
       assert.equal(amount, web3.toWei(1, 'ether'));
@@ -95,11 +110,21 @@ contract('Loan', function(_accounts) {
 
   it("should allow investor 2 to fund loan and up their investment in a later tx", function() {
     return loan.fundLoan({from: accounts[3], value: web3.toWei(0.35, 'ether')}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "Investment",
+                                    args: {
+                                      _from: accounts[3],
+                                      _value: web3.toWei(0.35, 'ether')
+                                    }});
       return loan.amountInvested.call(accounts[3]);
     }).then(function(amount) {
       assert.equal(amount, web3.toWei(0.35, 'ether'));
       return loan.fundLoan({from: accounts[3], value: web3.toWei(0.2, 'ether')});
     }).then(function(result) {
+      verifyEvent(result.logs[0], { event: "Investment",
+                                    args: {
+                                      _from: accounts[3],
+                                      _value: web3.toWei(0.2, 'ether')
+                                    }});
       return loan.amountInvested.call(accounts[3]);
     }).then(function(amount) {
       assert.equal(amount, web3.toWei(0.55, 'ether'));
@@ -115,6 +140,14 @@ contract('Loan', function(_accounts) {
     return loan.fundLoan({from: accounts[4],
                           value: web3.toWei(3, 'ether')}).then(function(result) {
       etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      verifyEvent(result.logs[0], { event: "Investment",
+                                    args: {
+                                      _from: accounts[4],
+                                      _value: web3.toWei(1.45, 'ether')
+                                    }});
+      verifyEvent(result.logs[1], { event: "LoanTermBegin",
+                                    args: {}
+                                  });
       return loan.amountInvested.call(accounts[4]);
     }).then(function(amount) {
       assert.equal(amount, web3.toWei(1.45, 'ether'));
@@ -143,8 +176,16 @@ contract('Loan', function(_accounts) {
     }).then(function(principal) {
       return second_loan.fundLoan({from: accounts[7],
                             value: web3.toWei(3, 'ether')});
-    }).then(function(tx) {
-      etherUsedForGas += TEST_RPC_GAS_PRICE.times(tx.receipt.gasUsed);
+    }).then(function(result) {
+      etherUsedForGas += TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      verifyEvent(result.logs[0], { event: "Investment",
+                                    args: {
+                                      _from: accounts[7],
+                                      _value: web3.toWei(3, 'ether')
+                                    }});
+      verifyEvent(result.logs[1], { event: "LoanTermBegin",
+                                    args: {}
+                                  });
       return second_loan.amountInvested.call(accounts[7]);
     }).then(function(amount) {
       assert.equal(amount, web3.toWei(3, 'ether'));
@@ -169,6 +210,12 @@ contract('Loan', function(_accounts) {
 
     var paybackQuantity = web3.toWei(web3.toBigNumber(1.5*1.05), 'ether');
     return loan.payBackLoan({value: paybackQuantity}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "Payment",
+                                    args: {
+                                      _from: accounts[0],
+                                      _value: web3.toWei(1.5*1.05, 'ether')
+                                    }});
+
       var investor_1_payout = web3.eth.getBalance(accounts[2]).minus(investor_1_balance_before);
       var investor_2_payout = web3.eth.getBalance(accounts[3]).minus(investor_2_balance_before);
       var investor_3_payout = web3.eth.getBalance(accounts[4]).minus(investor_3_balance_before);

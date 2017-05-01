@@ -4,8 +4,10 @@ import "./DSMath.sol";
 
 contract Loan {
   enum PeriodType { Weekly, Monthly, Yearly, FixedDate }
-  event Payment(address indexed _from, uint _value);
-  event Investment(address indexed _from, uint _value);
+  event Payment(address indexed _from, uint _value, uint _timestamp);
+  event Investment(address indexed _from, uint _value, uint _timestamp);
+  event LoanTermBegin(uint _timestamp);
+  event LoanAttested(uint _timestamp);
 
   // Requested principal of the loan
   uint public principal;
@@ -31,6 +33,7 @@ contract Loan {
 
   mapping(address => uint) public amountInvested;
   uint public totalInvested;
+  uint public totalRepaid;
 
   modifier onlyInvestors() {
     if (amountInvested[msg.sender] == 0)
@@ -59,6 +62,7 @@ contract Loan {
     if (msg.sender != attestor)
       throw;
     attestationUrl = _attestationUrl;
+    LoanAttested(block.timestamp);
   }
 
   function fundLoan() payable {
@@ -71,10 +75,13 @@ contract Loan {
     amountInvested[msg.sender] += currentInvestmentAmount;
     totalInvested += currentInvestmentAmount;
 
+    Investment(msg.sender, currentInvestmentAmount, block.timestamp);
+
     // If requested loan principal is fully funded, transfer balance to borrower
     if (totalInvested == principal) {
       if(!borrower.send(principal))
         throw;
+      LoanTermBegin(block.timestamp);
     }
 
     if (msg.value - currentInvestmentAmount > 0) {
@@ -86,6 +93,7 @@ contract Loan {
   function payBackLoan() payable {
     if (msg.value == 0)
       throw;
-    Payment(msg.sender, msg.value);
+    Payment(msg.sender, msg.value, block.timestamp);
+    totalRepaid += msg.value;
   }
 }
