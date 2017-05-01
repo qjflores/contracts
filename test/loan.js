@@ -1,7 +1,25 @@
 var Web3 = require('web3');
-var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+var TestRPC = require('ethereumjs-testrpc');
 
-var DSMath
+// Add timestamp fixing functionality
+var start_timestamp = Date.now();
+var web3 = new Web3(TestRPC.provider({"time": start_timestamp}));
+function setTimeForward(timeDiff) {
+  web3.currentProvider.sendAsync({
+    method: "evm_increaseTime",
+    params: [timeDiff],
+    jsonrpc: "2.0",
+    id: Date().now()
+  }, function (error, result) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Added " + timeDiff + " seconds to evm" )
+    }
+  });
+}
+
+
 var Loan = artifacts.require("./Loan.sol");
 
 function assertThrows(promise, message, returnFn=null) {
