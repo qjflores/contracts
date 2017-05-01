@@ -2,8 +2,7 @@ var Web3 = require('web3');
 var TestRPC = require('ethereumjs-testrpc');
 
 // Add timestamp fixing functionality
-var start_timestamp = Date.now();
-var web3 = new Web3(TestRPC.provider({"time": start_timestamp}));
+var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 function setTimeForward(timeDiff) {
   web3.currentProvider.sendAsync({
     method: "evm_increaseTime",
