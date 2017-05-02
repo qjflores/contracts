@@ -1,0 +1,90 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <h1>ipfs-log - benchmark join()</h1>
+
+    <h2>Description</h2>
+    <div>Add an entry to two logs and join them after each update. Limit the number of entries to 60. Measure throughput in operations per second.</div>
+    <pre><i>
+    let log1 = Log.create()
+    let log2 = Log.create()
+
+    const add1 = Log.append(ipfs, log1, "a" + loopCount)
+    const add2 = Log.append(ipfs, log2, "b" + loopCount)
+
+    Promise.all([add1, add2])
+      .then((res) => {
+        log1 = Log.join(ipfs, res[0], res[1], 60)
+        log2 = Log.join(ipfs, res[1], res[0], 60)
+      })
+    </i></pre>
+
+    <h2>Results</h2>
+    <pre id="output"></pre>
+
+    <script type="text/javascript" src="../../dist/ipfslog.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../node_modules/ipfs-daemon/dist/ipfs-browser-daemon.js" charset="utf-8"></script>
+
+    <script type="text/javascript">
+      let ipfs
+
+      // Metrics
+      let totalQueries = 0
+      let seconds = 0
+      let queriesPerSecond = 0
+      let lastTenSeconds = 0
+      let log1, log2
+
+      const queryLoop = () => {
+        const add1 = Log.append(ipfs, log1, "a" + totalQueries)
+        const add2 = Log.append(ipfs, log2, "b" + totalQueries)
+
+        Promise.all([add1, add2])
+          .then((res) => {
+            log1 = Log.join(res[0], res[1], 60)
+            log2 = Log.join(res[1], res[0], 60)
+            totalQueries ++
+            lastTenSeconds ++
+            queriesPerSecond ++
+            setImmediate(queryLoop)
+          })
+          .catch((e) => console.error(e))
+      }
+
+      let run = (() => {
+        ipfs = new IpfsDaemon({
+          IpfsDataDir: '/ipfs-log/exampels/benchmark-join',
+          Flags: [], 
+          Bootstrap: [] 
+        })
+
+        ipfs.on('error', (err) => console.error(err))
+
+        ipfs.on('ready', () => {
+          const outputElm = document.getElementById('output')
+          // Output metrics at 1 second interval
+          setInterval(() => {
+            seconds ++
+            if(seconds % 10 === 0) {
+              outputElm.innerHTML = `--> Average of ${lastTenSeconds/10} q/s in the last 10 seconds<br>` + outputElm.innerHTML
+              console.log(`--> Average of ${lastTenSeconds/10} q/s in the last 10 seconds`)
+              if(lastTenSeconds === 0)
+                throw new Error("Problems!")
+              lastTenSeconds = 0
+            }
+            outputElm.innerHTML = `${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds (log1: ${log1.items.length}, log2: ${log2.items.length})<br>` + outputElm.innerHTML
+            console.log(`${queriesPerSecond} queries per second, ${totalQueries} queries in ${seconds} seconds`)
+            queriesPerSecond = 0
+          }, 1000)
+
+          log1 = Log.create('A')
+          log2 = Log.create('B')
+          queryLoop()
+        })
+
+      })()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "raa": {
+    "name": "Dharma Risk Assessment Services Inc.",
+    "url": "https://dharma.io",
+    "account": "0x1f72f3d48c246c4e0a264fe579e3d3dfdb4bfc43"
+  },
+  "contract": "0xXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "attestation": {
+    "verified": "true",
+    "default_risk": 0.10,
+    "location": "UK",
+    "suggested_terms": {
+      "interest": 0.045,
+      "compounded": "true",
+      "period": "yearly",
+      "termLength": 3
+    }
+  },
+  "signature": "0x1953011461ae8437645945161fb434e4eb909cfb7c8b5aa86a0c75fc281af130743de1c627ec41ba500dd6a8c12923f8401aaa9d7e018965c657955856846bef00"
+}

@@ -9,7 +9,6 @@ contract Loan {
   event InvestmentRedeemed(address indexed _to, uint128 _value, uint256 _timestamp);
   event LoanTermBegin(uint256 _timestamp);
   event LoanAttested(uint256 _timestamp);
-  event Throw(uint256 _timestamp);
 
   // Requested principal of the loan
   uint128 public principal;
