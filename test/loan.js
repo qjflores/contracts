@@ -3,18 +3,20 @@ var BigNumber = require('bignumber.js');
 
 // Add timestamp fixing functionality
 var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-function setTimeForward(timeDiff) {
-  web3.currentProvider.sendAsync({
-    method: "evm_increaseTime",
-    params: [timeDiff],
-    jsonrpc: "2.0",
-    id: Date().now()
-  }, function (error, result) {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log("Added " + timeDiff + " seconds to evm" )
-    }
+function setTimeForward(timeDiff, fn) {
+  return new Promise(function(accept, reject) {
+    web3.currentProvider.sendAsync({
+      method: "evm_increaseTime",
+      params: [timeDiff],
+      jsonrpc: "2.0",
+      id: Date.now()
+    }, function (error, result) {
+      if (error) {
+        reject(error);
+      } else {
+        accept(result);
+      }
+    });
   });
 }
 
@@ -62,11 +64,11 @@ PeriodType = {
 
 var Loan = artifacts.require("./Loan.sol");
 
-var timeLockDate = new Date();
-timeLockDate.setDate(timeLockDate.getDate() + 14); // set timelock date for 14 days in future
+// set timelock date for 14 days in future
+var timeLockDate = web3.eth.getBlock('latest').timestamp + 14*24*3600;
 const TEST_RPC_GAS_PRICE = web3.toBigNumber('100000000000');
 const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
-                      web3.toWei(.05, 'ether'), true, 2, timeLockDate.getTime()];
+                      web3.toWei(.05, 'ether'), true, 2, timeLockDate];
 contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
@@ -88,6 +90,9 @@ contract('Loan', function(_accounts) {
       return loan.termLength.call();
     }).then(function(termLength) {
       assert.equal(termLength, LOAN_TERMS[4])
+      return loan.fundingPeriodTimeLock.call();
+    }).then(function(fundingPeriodTimeLock) {
+      assert.equal(fundingPeriodTimeLock, timeLockDate);
       return loan.borrower.call();
     }).then(function(borrower) {
       assert.equal(borrower, accounts[0]);
@@ -162,13 +167,10 @@ contract('Loan', function(_accounts) {
     });
   });
 
-  // it("should not allow investors to withdraw their funds before the timelock date", function() {
-  //
-  // });
-  //
-  // it("should allow investors to withdraw thir funds after timelock date if loan is unfilled", function() {
-  //
-  // });
+  it("should not allow investors to withdraw their funds before the timelock date", function() {
+    return assertThrows(loan.withdrawInvestment({from: accounts[2]}),
+                        "investor 1 should not be able to withdraw before timelock");
+  });
 
   it("should allow investor 3 to fund the remainder of the loan, refund him the \
       extra amount he sent, and forward the principal to the borrower", function() {
@@ -240,6 +242,58 @@ contract('Loan', function(_accounts) {
       assert.equal(borrowerDelta, web3.toWei(3, 'ether'), "balance was not transferred to borrower");
       assert.equal(web3.eth.getBalance(second_loan.address), 0);
     })
+  });
+
+  it("should allow investors to withdraw their investment if the loan remains \
+        unfunded after the timelock date", function() {
+      investor_4_balance_before = 0;
+      investor_5_balance_before = 0;
+
+      return Loan.new(...[accounts[8]].concat(LOAN_TERMS),
+                      {from: accounts[7]}).then(function(instance) {
+        unfulfilled_loan = instance;
+        var ipfs_url = "/ipfs/QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
+        return unfulfilled_loan.attestToBorrower(ipfs_url, {from: accounts[8]});
+      }).then(function(result) {
+        return unfulfilled_loan.fundLoan({from: accounts[9],
+                                          value: web3.toWei(1, 'ether')});
+      }).then(function(result) {
+        return unfulfilled_loan.fundLoan({from: accounts[10],
+                                          value: web3.toWei(1, 'ether')});
+      }).then(function(result) {
+        investor_4_balance_before = web3.eth.getBalance(accounts[9]);
+        investor_5_balance_before = web3.eth.getBalance(accounts[10]);
+        return setTimeForward(15*24*3600);
+
+/******************************************************************************
+    15 DAYS LATER...
+******************************************************************************/
+
+      }).then(function(result) {
+        return unfulfilled_loan.withdrawInvestment({from: accounts[9]});
+      }).then(function(result) {
+        var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+        var investor_4_refund = web3.eth.getBalance(accounts[9])
+                                        .minus(investor_4_balance_before)
+                                        .plus(etherUsedForGas);
+
+        assertBigNumberEquality(investor_4_refund, web3.toBigNumber(web3.toWei(1, 'ether')));
+        return unfulfilled_loan.withdrawInvestment({from: accounts[10]});
+      }).then(function(result) {
+        var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+        var investor_5_refund = web3.eth.getBalance(accounts[10])
+                                        .minus(investor_5_balance_before)
+                                        .plus(etherUsedForGas);
+
+        assert.equal(investor_5_refund, web3.toWei(1, 'ether'));
+        assert.equal(web3.eth.getBalance(unfulfilled_loan.address), 0);
+      });
+  });
+
+  it("should not allow a lender to withdraw their investment if the loan is \
+        funded already, even if the timelock date has passed", function() {
+    return assertThrows(loan.withdrawInvestment({from: accounts[3]}),
+                        "investor 2 should not be able to withdraw after loan is funded");
   });
 
   /*
@@ -387,5 +441,4 @@ contract('Loan', function(_accounts) {
       assert.equal(leftoverContractBalance, 0);
     });
   });
-  // it("should allow a lender to transfer their stake");
 });

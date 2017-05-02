@@ -9,6 +9,7 @@ contract Loan {
   event InvestmentRedeemed(address indexed _to, uint128 _value, uint256 _timestamp);
   event LoanTermBegin(uint256 _timestamp);
   event LoanAttested(uint256 _timestamp);
+  event Throw(uint256 _timestamp);
 
   // Requested principal of the loan
   uint128 public principal;
@@ -24,7 +25,7 @@ contract Loan {
   // NOTE: If period is of type "FixedDate", termLength represents the UNIX
   //       timestamp of the repayment date.
   uint128 public termLength;
-  // Block number before which investors will not be allowed to withdraw their funds
+  // Timestamp before which investors will not be allowed to withdraw their funds
   uint128 public fundingPeriodTimeLock;
 
   address public borrower;
@@ -53,6 +54,24 @@ contract Loan {
     _;
   }
 
+  modifier afterLoanFunded() {
+    if (totalInvested < principal)
+      throw;
+    _;
+  }
+
+  modifier beforeLoanFunded() {
+    if (totalInvested >= principal)
+      throw;
+    _;
+  }
+
+  modifier afterLoanAttested() {
+    if (attestationUrl.length == 0)
+      throw;
+    _;
+  }
+
   function Loan(address _attestorAddr,
                 uint128 _principal,
                 PeriodType _periodType,
@@ -77,11 +96,7 @@ contract Loan {
     LoanAttested(block.timestamp);
   }
 
-  function fundLoan() payable {
-    // Throw if loan is unattested or has been fully funded
-    if (attestationUrl.length == 0 || totalInvested == principal) {
-      throw;
-    }
+  function fundLoan() payable afterLoanAttested beforeLoanFunded {
     uint128 principalRemaining = principal - totalInvested;
     uint128 currentInvestmentAmount = DSMath.cast(DSMath.min(msg.value, principalRemaining));
     investors[msg.sender].amountInvested += currentInvestmentAmount;
@@ -109,7 +124,7 @@ contract Loan {
     totalRepaid += DSMath.cast(msg.value);
   }
 
-  function redeemInvestment() onlyInvestors {
+  function redeemInvestment() onlyInvestors afterLoanFunded {
     Investor investor = investors[msg.sender];
     uint128 investorEntitledTo = DSMath.wdiv(DSMath.wmul(investor.amountInvested, totalRepaid), totalInvested);
     uint128 remainingBalance = investorEntitledTo - investor.amountRedeemed;
@@ -119,5 +134,17 @@ contract Loan {
     if (!msg.sender.send(remainingBalance))
       throw;
     InvestmentRedeemed(msg.sender, remainingBalance, block.timestamp);
+  }
+
+  function withdrawInvestment() onlyInvestors afterTimelock beforeLoanFunded {
+    uint128 investmentRefund = investors[msg.sender].amountInvested;
+    totalInvested -= investmentRefund;
+    delete investors[msg.sender];
+
+    if (!msg.sender.send(investmentRefund))
+      throw;
+
+    if (totalInvested == 0)
+      selfdestruct(msg.sender);
   }
 }
