@@ -143,24 +143,24 @@ contract('Loan', function(_accounts) {
   });
 
   it("should allow investor 2 to fund loan and up their investment in a later tx", function() {
-    return loan.fundLoan({from: accounts[3], value: web3.toWei(0.35, 'ether')}).then(function(result) {
+    return loan.fundLoan({from: accounts[11], value: web3.toWei(0.35, 'ether')}).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
                                     args: {
-                                      _from: accounts[3],
+                                      _from: accounts[11],
                                       _value: web3.toWei(0.35, 'ether')
                                     }});
-      return loan.investors.call(accounts[3]);
+      return loan.investors.call(accounts[11]);
     }).then(function(investor) {
       assert.equal(investor[0], web3.toWei(0.35, 'ether'));
       assert.equal(investor[1], web3.toWei(0, 'ether'));
-      return loan.fundLoan({from: accounts[3], value: web3.toWei(0.2, 'ether')});
+      return loan.fundLoan({from: accounts[11], value: web3.toWei(0.2, 'ether')});
     }).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
                                     args: {
-                                      _from: accounts[3],
+                                      _from: accounts[11],
                                       _value: web3.toWei(0.2, 'ether')
                                     }});
-      return loan.investors.call(accounts[3]);
+      return loan.investors.call(accounts[11]);
     }).then(function(investor) {
       assert.equal(investor[0], web3.toWei(0.55, 'ether'));
       assert.equal(investor[1], web3.toWei(0, 'ether'));
@@ -292,9 +292,21 @@ contract('Loan', function(_accounts) {
 
   it("should not allow a lender to withdraw their investment if the loan is \
         funded already, even if the timelock date has passed", function() {
-    return assertThrows(loan.withdrawInvestment({from: accounts[3]}),
+    return assertThrows(loan.withdrawInvestment({from: accounts[11]}),
                         "investor 2 should not be able to withdraw after loan is funded");
   });
+
+  it("should allow a lender to transfer ownership in their loan to someone else",
+          function() {
+    return loan.transfer(accounts[3], {from: accounts[11]}).then(function(result) {
+      return loan.investors.call(accounts[3]);
+    }).then(function(new_investor) {
+      assert.equal(new_investor[0], web3.toWei(0.55, 'ether'));
+      return loan.investors.call(accounts[11]);
+    }).then(function(old_investor) {
+      assert.equal(old_investor[0], 0);
+    });
+  })
 
   /*
     Flow of this test is expected to go as follows:

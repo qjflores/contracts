@@ -147,4 +147,9 @@ contract Loan {
     if (totalInvested == 0)
       selfdestruct(msg.sender);
   }
+
+  function transfer(address to) onlyInvestors {
+    investors[to] = investors[msg.sender];
+    delete investors[msg.sender];
+  }
 }
