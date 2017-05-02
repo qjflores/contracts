@@ -1,5 +1,5 @@
 var Web3 = require('web3');
-var TestRPC = require('ethereumjs-testrpc');
+var BigNumber = require('bignumber.js');
 
 // Add timestamp fixing functionality
 var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
@@ -18,9 +18,6 @@ function setTimeForward(timeDiff) {
   });
 }
 
-
-var Loan = artifacts.require("./Loan.sol");
-
 function assertThrows(promise, message, returnFn=null) {
   return promise.then(function(success) {
     // Call was successful, should have thrown
@@ -32,10 +29,19 @@ function assertThrows(promise, message, returnFn=null) {
   });
 }
 
+function assertBigNumberEquality(first, second, message=null) {
+  assert.equal(first.round().toString(), second.round().toString(), message);
+}
+
 function verifyEvent(log, expectedLog) {
   assert.equal(log.event, expectedLog.event);
   Object.keys(expectedLog.args).forEach(function(key, index) {
-    assert.equal(log.args[key], expectedLog.args[key]);
+    if (log.args[key] instanceof BigNumber ||
+          expectedLog.args[key] instanceof BigNumber) {
+        assertBigNumberEquality(log.args[key], expectedLog.args[key]);
+    } else {
+      assert.equal(log.args[key], expectedLog.args[key]);
+    }
   });
 }
 
@@ -53,9 +59,14 @@ PeriodType = {
   ACCOUNT 3: INVESTOR 2
   ACCOUNT 4: INVESTOR 3
 */
+
+var Loan = artifacts.require("./Loan.sol");
+
+var timeLockDate = new Date();
+timeLockDate.setDate(timeLockDate.getDate() + 14); // set timelock date for 14 days in future
 const TEST_RPC_GAS_PRICE = web3.toBigNumber('100000000000');
 const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
-                      web3.toWei(.05, 'ether'), true, 2, 1493594766994];
+                      web3.toWei(.05, 'ether'), true, 2, timeLockDate.getTime()];
 contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
@@ -119,9 +130,10 @@ contract('Loan', function(_accounts) {
                                       _from: accounts[2],
                                       _value: web3.toWei(1, 'ether')
                                     }});
-      return loan.amountInvested.call(accounts[2]);
-    }).then(function(amount) {
-      assert.equal(amount, web3.toWei(1, 'ether'));
+      return loan.investors.call(accounts[2]);
+    }).then(function(investor) {
+      assert.equal(investor[0], web3.toWei(1, 'ether'));
+      assert.equal(investor[1], web3.toWei(0, 'ether'));
     });
   });
 
@@ -132,9 +144,10 @@ contract('Loan', function(_accounts) {
                                       _from: accounts[3],
                                       _value: web3.toWei(0.35, 'ether')
                                     }});
-      return loan.amountInvested.call(accounts[3]);
-    }).then(function(amount) {
-      assert.equal(amount, web3.toWei(0.35, 'ether'));
+      return loan.investors.call(accounts[3]);
+    }).then(function(investor) {
+      assert.equal(investor[0], web3.toWei(0.35, 'ether'));
+      assert.equal(investor[1], web3.toWei(0, 'ether'));
       return loan.fundLoan({from: accounts[3], value: web3.toWei(0.2, 'ether')});
     }).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
@@ -142,11 +155,20 @@ contract('Loan', function(_accounts) {
                                       _from: accounts[3],
                                       _value: web3.toWei(0.2, 'ether')
                                     }});
-      return loan.amountInvested.call(accounts[3]);
-    }).then(function(amount) {
-      assert.equal(amount, web3.toWei(0.55, 'ether'));
+      return loan.investors.call(accounts[3]);
+    }).then(function(investor) {
+      assert.equal(investor[0], web3.toWei(0.55, 'ether'));
+      assert.equal(investor[1], web3.toWei(0, 'ether'));
     });
   });
+
+  // it("should not allow investors to withdraw their funds before the timelock date", function() {
+  //
+  // });
+  //
+  // it("should allow investors to withdraw thir funds after timelock date if loan is unfilled", function() {
+  //
+  // });
 
   it("should allow investor 3 to fund the remainder of the loan, refund him the \
       extra amount he sent, and forward the principal to the borrower", function() {
@@ -165,9 +187,11 @@ contract('Loan', function(_accounts) {
       verifyEvent(result.logs[1], { event: "LoanTermBegin",
                                     args: {}
                                   });
-      return loan.amountInvested.call(accounts[4]);
-    }).then(function(amount) {
-      assert.equal(amount, web3.toWei(1.45, 'ether'));
+      return loan.investors.call(accounts[4]);
+    }).then(function(investor) {
+      assert.equal(investor[0], web3.toWei(1.45, 'ether'));
+      assert.equal(investor[1], web3.toWei(0, 'ether'));
+
       var lastInvestorBalanceAfter = web3.eth.getBalance(accounts[4]);
       var borrowerBalanceAfter = web3.eth.getBalance(accounts[0]);
       var lastInvestorDelta = lastInvestorBalanceBefore.minus(lastInvestorBalanceAfter).minus(etherUsedForGas);
@@ -203,9 +227,11 @@ contract('Loan', function(_accounts) {
       verifyEvent(result.logs[1], { event: "LoanTermBegin",
                                     args: {}
                                   });
-      return second_loan.amountInvested.call(accounts[7]);
-    }).then(function(amount) {
-      assert.equal(amount, web3.toWei(3, 'ether'));
+      return second_loan.investors.call(accounts[7]);
+    }).then(function(investor) {
+      assert.equal(investor[0], web3.toWei(3, 'ether'));
+      assert.equal(investor[1], web3.toWei(0, 'ether'));
+
       var lastInvestorBalanceAfter = web3.eth.getBalance(accounts[7]);
       var borrowerBalanceAfter = web3.eth.getBalance(accounts[5]);
       var lastInvestorDelta = lastInvestorBalanceBefore.minus(lastInvestorBalanceAfter).minus(etherUsedForGas);
@@ -216,31 +242,150 @@ contract('Loan', function(_accounts) {
     })
   });
 
-  it("should allow a borrower to repay a loan and prorate the loan correctly", function() {
-    var proration = [web3.toBigNumber(1 / 3),
-                     web3.toBigNumber(0.55 / 3),
-                     web3.toBigNumber(1.45 / 3)];
+  /*
+    Flow of this test is expected to go as follows:
+      1. Borrower repays half of his principal + interest
+      2. Investor 1 redeems his portion of the first half
+      3. Investor 1 attempts to redeem again from the first half portion - THROWS
+      4. Investor 2 redeems his portion of the first half
+      5. Borrower repays remainder of his principal + interest
+      6. Investor 1 redeems his portion of the remaining half
+      7. Investor 1 attempts to redeem again though he's redeemed his full value - THROWS
+      8. Investor 2 redeems his portion of the remaining half
+      9. Investor 3 redeems his portion of the entire principal + interest balance.
+  */
 
-    var investor_1_balance_before = web3.eth.getBalance(accounts[2]);
-    var investor_2_balance_before = web3.eth.getBalance(accounts[3]);
-    var investor_3_balance_before = web3.eth.getBalance(accounts[4]);
+  var proration = [web3.toBigNumber('1').dividedBy('3'),
+                   web3.toBigNumber('0.55').dividedBy('3'),
+                   web3.toBigNumber('1.45').dividedBy('3')];
 
-    var paybackQuantity = web3.toWei(web3.toBigNumber(1.5*1.05), 'ether');
+  var investor_1_balance_before = null;
+  var investor_2_balance_before = null;
+  var investor_3_balance_before = null;
+
+  var etherOwed = web3.toBigNumber(1.5).times(web3.toBigNumber(1.05));
+  var paybackQuantity = web3.toWei(etherOwed, 'ether');
+
+  it("should allow a borrower to make his first monthly repayment", function() {
     return loan.payBackLoan({value: paybackQuantity}).then(function(result) {
       verifyEvent(result.logs[0], { event: "Payment",
                                     args: {
                                       _from: accounts[0],
-                                      _value: web3.toWei(1.5*1.05, 'ether')
+                                      _value: paybackQuantity
+                                    }});
+      assertBigNumberEquality(web3.eth.getBalance(loan.address), paybackQuantity);
+    });
+  });
+
+  it("should allow investor 1 to redeem his portion of the first monthly \
+        payment once only", function() {
+    investor_1_balance_before = web3.eth.getBalance(accounts[2]);
+    return loan.redeemInvestment({from: accounts[2]}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
+                                    args: {
+                                      _to: accounts[2],
+                                      _value: paybackQuantity.times(proration[0])
+                                    }});
+      var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      var investor_1_payout = web3.eth.getBalance(accounts[2])
+                                      .minus(investor_1_balance_before)
+                                      .plus(etherUsedForGas);
+
+      assertBigNumberEquality(investor_1_payout,
+                              paybackQuantity.times(proration[0]),
+                              "did not prorate investor 1's payout correctly");
+
+      return assertThrows(loan.redeemInvestment({from: accounts[2]}),
+                      "should not allow investor 1 redeem when he's already \
+                      redeemed his portion of this pay back.");
+    })
+  });
+
+  it("should allow investor 2 to redeem her portion of the first monthly \
+        payment", function() {
+    investor_2_balance_before = web3.eth.getBalance(accounts[3]);
+    return loan.redeemInvestment({from: accounts[3]}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
+                                    args: {
+                                      _to: accounts[3],
+                                      _value: paybackQuantity.times(proration[1])
                                     }});
 
-      var investor_1_payout = web3.eth.getBalance(accounts[2]).minus(investor_1_balance_before);
-      var investor_2_payout = web3.eth.getBalance(accounts[3]).minus(investor_2_balance_before);
-      var investor_3_payout = web3.eth.getBalance(accounts[4]).minus(investor_3_balance_before);
+      var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      var investor_2_payout = web3.eth.getBalance(accounts[3])
+                                      .minus(investor_2_balance_before)
+                                      .plus(etherUsedForGas);
+      assertBigNumberEquality(investor_2_payout, paybackQuantity.times(proration[1]));
+    });
+  });
 
-      assert.equal(investor_1_payout, paybackQuantity.times(proration[0]));
-      assert.equal(investor_2_payout, paybackQuantity.times(proration[1]));
-      assert.equal(investor_3_payout, paybackQuantity.times(proration[2]));
+  it("should allow borrower to make his final monthly payment", function() {
+    return loan.payBackLoan({value: paybackQuantity}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "Payment",
+                                    args: {
+                                      _from: accounts[0],
+                                      _value: paybackQuantity
+                                    }});
+    });
+  });
+
+  it("should allow investor 1 to redeem his portion of the final monthly \
+        payment only once", function() {
+    investor_1_balance_before = web3.eth.getBalance(accounts[2]);
+    return loan.redeemInvestment({from: accounts[2]}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
+                                    args: {
+                                      _to: accounts[2],
+                                      _value: paybackQuantity.times(proration[0])
+                                    }});
+
+      var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      var investor_1_payout = web3.eth.getBalance(accounts[2])
+                                      .minus(investor_1_balance_before)
+                                      .plus(etherUsedForGas);
+      assertBigNumberEquality(investor_1_payout, paybackQuantity.times(proration[0]),
+                    "did not prorate investor 1's second payout correctly");
+
+      return assertThrows(loan.redeemInvestment({from: accounts[2]}),
+                          "should not allow investor 1 redeem when he's already \
+                          redeemed the full portion of his share of the loan");
+    });
+  });
+
+  it("should allow investor 2 to redeem her portion of the final monthly \
+        payment", function() {
+    investor_2_balance_before = web3.eth.getBalance(accounts[3]);
+    loan.redeemInvestment({from: accounts[3]}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
+                                    args: {
+                                      _to: accounts[3],
+                                      _value: paybackQuantity.times(proration[1])
+                                    }});
+      var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      var investor_2_payout = web3.eth.getBalance(accounts[3])
+                                      .minus(investor_2_balance_before)
+                                      .plus(etherUsedForGas);
+      assertBigNumberEquality(investor_2_payout, paybackQuantity.times(proration[1]));
+    });
+  });
+
+  it("should allow investor 3 to redeem his unclaimed portion of the total two \
+        monthly payments", function() {
+    investor_3_balance_before = web3.eth.getBalance(accounts[4]);
+    return loan.redeemInvestment({from: accounts[4]}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
+                                    args: {
+                                      _to: accounts[4],
+                                      _value: paybackQuantity.times(2).times(proration[2])
+                                    }});
+      var etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
+      var investor_3_payout = web3.eth.getBalance(accounts[4])
+                                      .minus(investor_3_balance_before)
+                                      .plus(etherUsedForGas);
+      assertBigNumberEquality(investor_3_payout, paybackQuantity.times(2).times(proration[2]));
+      var leftoverContractBalance = web3.eth.getBalance(loan.address);
+      assert.equal(leftoverContractBalance, 0);
     });
   });
   // it("should allow a lender to transfer their stake");
-})
+});

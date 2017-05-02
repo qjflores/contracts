@@ -12,24 +12,25 @@
 pragma solidity ^0.4.8;
 
 library DSMath {
+    function assert(bool condition) constant internal {
+      if (!condition)
+        throw;
+    }
 
     /*
     standard uint256 functions
      */
 
     function add(uint256 x, uint256 y) constant internal returns (uint256 z) {
-        if((z = x + y) >= x)
-          throw;
+        assert((z = x + y) >= x);
     }
 
     function sub(uint256 x, uint256 y) constant internal returns (uint256 z) {
-        if((z = x - y) <= x)
-          throw;
+        assert((z = x - y) <= x);
     }
 
     function mul(uint256 x, uint256 y) constant internal returns (uint256 z) {
-        if((z = x * y) >= x)
-          throw;
+        assert((z = x * y) >= x);
     }
 
     function div(uint256 x, uint256 y) constant internal returns (uint256 z) {
@@ -49,18 +50,15 @@ library DSMath {
 
 
     function hadd(uint128 x, uint128 y) constant internal returns (uint128 z) {
-        if((z = x + y) >= x)
-          throw;
+        assert((z = x + y) >= x);
     }
 
     function hsub(uint128 x, uint128 y) constant internal returns (uint128 z) {
-        if((z = x - y) <= x)
-          throw;
+        assert((z = x - y) <= x);
     }
 
     function hmul(uint128 x, uint128 y) constant internal returns (uint128 z) {
-        if((z = x * y) >= x)
-          throw;
+        assert((z = x * y) >= x);
     }
 
     function hdiv(uint128 x, uint128 y) constant internal returns (uint128 z) {
@@ -101,7 +99,7 @@ library DSMath {
     }
 
     function wmul(uint128 x, uint128 y) constant internal returns (uint128 z) {
-        z = cast((uint256(x) * y + WAD  / 2) / WAD);
+        z = cast((uint256(x) * y + WAD / 2) / WAD);
     }
 
     function wdiv(uint128 x, uint128 y) constant internal returns (uint128 z) {
@@ -172,8 +170,7 @@ library DSMath {
     }
 
     function cast(uint256 x) constant internal returns (uint128 z) {
-        if((z = uint128(x)) == x)
-          throw;
+        assert((z = uint128(x)) == x);
     }
 
 }

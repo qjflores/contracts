@@ -4,50 +4,62 @@ import "./DSMath.sol";
 
 contract Loan {
   enum PeriodType { Weekly, Monthly, Yearly, FixedDate }
-  event Payment(address indexed _from, uint _value, uint _timestamp);
-  event Investment(address indexed _from, uint _value, uint _timestamp);
-  event LoanTermBegin(uint _timestamp);
-  event LoanAttested(uint _timestamp);
+  event Payment(address indexed _from, uint128 _value, uint256 _timestamp);
+  event Investment(address indexed _from, uint128 _value, uint256 _timestamp);
+  event InvestmentRedeemed(address indexed _to, uint128 _value, uint256 _timestamp);
+  event LoanTermBegin(uint256 _timestamp);
+  event LoanAttested(uint256 _timestamp);
 
   // Requested principal of the loan
-  uint public principal;
+  uint128 public principal;
   // Length of each period
-  uint public periodLength;
+  uint128 public periodLength;
   // Unit of time referred to in the period length (i.e. 60 Months vs. 5 Years)
   PeriodType public periodType;
   // Interest rate charged on basis of every period
-  uint public interestRate;
+  uint128 public interestRate;
   // True if interest is compounded at each period, false if not
   bool public isInterestCompounded;
   // Length in number of periods
   // NOTE: If period is of type "FixedDate", termLength represents the UNIX
   //       timestamp of the repayment date.
-  uint public termLength;
+  uint128 public termLength;
   // Block number before which investors will not be allowed to withdraw their funds
-  uint public fundingPeriodTimeLock;
+  uint128 public fundingPeriodTimeLock;
 
   address public borrower;
   address public attestor;
 
   bytes public attestationUrl;
 
-  mapping(address => uint) public amountInvested;
-  uint public totalInvested;
-  uint public totalRepaid;
+  struct Investor {
+    uint128 amountInvested;
+    uint128 amountRedeemed;
+  }
+
+  mapping(address => Investor) public investors;
+  uint128 public totalInvested;
+  uint128 public totalRepaid;
 
   modifier onlyInvestors() {
-    if (amountInvested[msg.sender] == 0)
+    if (investors[msg.sender].amountInvested == 0)
+      throw;
+    _;
+  }
+
+  modifier afterTimelock() {
+    if (block.timestamp < fundingPeriodTimeLock)
       throw;
     _;
   }
 
   function Loan(address _attestorAddr,
-                uint _principal,
+                uint128 _principal,
                 PeriodType _periodType,
-                uint _interestRate,
+                uint128 _interestRate,
                 bool _isInterestCompounded,
-                uint _termLength,
-                uint _fundingPeriodTimeLock) {
+                uint128 _termLength,
+                uint128 _fundingPeriodTimeLock) {
     borrower = msg.sender;
     attestor = _attestorAddr;
     principal = _principal;
@@ -70,9 +82,9 @@ contract Loan {
     if (attestationUrl.length == 0 || totalInvested == principal) {
       throw;
     }
-    uint principalRemaining = principal - totalInvested;
-    uint currentInvestmentAmount = DSMath.min(msg.value, principalRemaining);
-    amountInvested[msg.sender] += currentInvestmentAmount;
+    uint128 principalRemaining = principal - totalInvested;
+    uint128 currentInvestmentAmount = DSMath.cast(DSMath.min(msg.value, principalRemaining));
+    investors[msg.sender].amountInvested += currentInvestmentAmount;
     totalInvested += currentInvestmentAmount;
 
     Investment(msg.sender, currentInvestmentAmount, block.timestamp);
@@ -93,7 +105,19 @@ contract Loan {
   function payBackLoan() payable {
     if (msg.value == 0)
       throw;
-    Payment(msg.sender, msg.value, block.timestamp);
-    totalRepaid += msg.value;
+    Payment(msg.sender, DSMath.cast(msg.value), block.timestamp);
+    totalRepaid += DSMath.cast(msg.value);
+  }
+
+  function redeemInvestment() onlyInvestors {
+    Investor investor = investors[msg.sender];
+    uint128 investorEntitledTo = DSMath.wdiv(DSMath.wmul(investor.amountInvested, totalRepaid), totalInvested);
+    uint128 remainingBalance = investorEntitledTo - investor.amountRedeemed;
+    if (remainingBalance == 0)
+      throw;
+    investor.amountRedeemed += remainingBalance;
+    if (!msg.sender.send(remainingBalance))
+      throw;
+    InvestmentRedeemed(msg.sender, remainingBalance, block.timestamp);
   }
 }
