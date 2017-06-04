@@ -296,17 +296,53 @@ contract('Loan', function(_accounts) {
                         "investor 2 should not be able to withdraw after loan is funded");
   });
 
+/*
+  ERC20 TOKEN STANDARD TESTS
+*/
+
   it("should allow a lender to transfer ownership in their loan to someone else",
           function() {
-    return loan.transfer(accounts[3], {from: accounts[11]}).then(function(result) {
+    return loan.transfer(accounts[3], web3.toWei(0.33, 'ether'), {from: accounts[11]}).then(function(result) {
       return loan.investors.call(accounts[3]);
     }).then(function(new_investor) {
-      assert.equal(new_investor[0], web3.toWei(0.55, 'ether'));
+      assert.equal(new_investor[0], web3.toWei(0.33, 'ether'));
       return loan.investors.call(accounts[11]);
     }).then(function(old_investor) {
-      assert.equal(old_investor[0], 0);
+      assert.equal(old_investor[0], 0.22);
+    })
+  })
+
+  it("should expose a totalSupply endpoint", function() {
+    return loan.totalSupply().then(function(totalSupply) {
+      assert.equal(totalSupply, web3.toWei(1, 'ether'));
+    })
+  });
+
+  it("should expose a balanceOf endpoint", function() {
+    return loan.balanceOf(accounts[3]).then(function(balance) {
+      assert.equal(balanceOf, (0.55 / 3) * web3.toWei(1, 'ether'));
+    })
+  });
+
+  it("should expose the transferFrom, approve, and allowance endpoints", function() {
+    return assertThrows(loan.transferFrom(accounts[11], accounts[3], web3.toWei(0.22, 'ether'), {from: accounts[12]}),
+      "should not allow transferFrom without approval").then(function(result) {
+      return loan.approve(accounts[12], web3.toWei(0.22, 'ether'));
+    }).then(function(result) {
+      return loan.allowance(accounts[11], accounts[12]);
+    }).then(function(allowance) {
+      assert.equal(allowance, web3.toWei(0.22, 'ether'));
+      return loan.transferFrom(accounts[11], accounts[3], web3.toWei(0.22), {from: accounts[12]});
+    }).then(function(result) {
+      return loan.balanceOf(accounts[11]);
+    }).then(function(balance) {
+      assert.equal(balance, 0);
+      return loan.balanceOf(accounts[3]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(0.22, 'ether'));
     });
   })
+
 
   /*
     Flow of this test is expected to go as follows:

@@ -3,7 +3,7 @@ pragma solidity ^0.4.0;
 import "./DSMath.sol";
 
 contract Loan {
-  enum PeriodType { Weekly, Monthly, Yearly, FixedDate }
+  enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
   event Payment(address indexed _from, uint128 _value, uint256 _timestamp);
   event Investment(address indexed _from, uint128 _value, uint256 _timestamp);
   event InvestmentRedeemed(address indexed _to, uint128 _value, uint256 _timestamp);
