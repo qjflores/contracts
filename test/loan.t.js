@@ -62,13 +62,13 @@ PeriodType = {
   ACCOUNT 4: INVESTOR 3
 */
 
-var Loan = artifacts.require("./Loan.sol");
+var Loan = artifacts.require("./ZeppelinLoan.sol");
 
 // set timelock date for 14 days in future
 var timeLockDate = web3.eth.getBlock('latest').timestamp + 14*24*3600;
 const TEST_RPC_GAS_PRICE = web3.toBigNumber('100000000000');
 const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
-                      web3.toWei(.05, 'ether'), true, 2, timeLockDate];
+                      web3.toWei(.05, 'ether'), 2, timeLockDate];
 contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
@@ -84,15 +84,12 @@ contract('Loan', function(_accounts) {
       return loan.interestRate.call();
     }).then(function(interestRate) {
       assert.equal(interestRate, LOAN_TERMS[2]);
-      return loan.isInterestCompounded.call();
-    }).then(function(isInterestCompounded) {
-      assert.equal(isInterestCompounded, LOAN_TERMS[3]);
       return loan.termLength.call();
     }).then(function(termLength) {
-      assert.equal(termLength, LOAN_TERMS[4])
-      return loan.fundingPeriodTimeLock.call();
-    }).then(function(fundingPeriodTimeLock) {
-      assert.equal(fundingPeriodTimeLock, timeLockDate);
+      assert.equal(termLength, LOAN_TERMS[3])
+      return loan.timeLock.call();
+    }).then(function(loanTimeLock) {
+      assert.equal(loanTimeLock, timeLockDate);
       return loan.borrower.call();
     }).then(function(borrower) {
       assert.equal(borrower, accounts[0]);
@@ -104,66 +101,66 @@ contract('Loan', function(_accounts) {
 
   it("should not allow an investor to fund the loan before it's been attested to", function() {
     var invalidFundTransaction =
-        loan.fundLoan({from: accounts[2], value: web3.toWei(1, 'ether')});
+        loan.fundLoan(accounts[2], {from: accounts[2], value: web3.toWei(1, 'ether')});
     return assertThrows(invalidFundTransaction,
           "Should have thrown when investor funded unattested loan");
   });
 
   it("should allow an RAA to attest to the loan", function() {
-    var ipfs_url = "/ipfs/QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
+    var ipfs_url = "QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
     var invalidAttestorTransaction =
       loan.attestToBorrower(ipfs_url, {from: accounts[4]});
     return assertThrows(invalidAttestorTransaction,
                         "should only allow the pre-set attestor to attest",
-                        loan.attestationUrl.call()).then(function(attestationUrl) {
-      assert.equal(attestationUrl, '0x');
+                        loan.attestationCommitment.call()).then(function(attestationCommitment) {
+      assert.equal(attestationCommitment, '0x');
       return loan.attestToBorrower(ipfs_url, {from: accounts[1]});
     }).then(function(result) {
       verifyEvent(result.logs[0], { event: "LoanAttested",
                                     args: {}
                                   });
-      return loan.attestationUrl.call();
-    }).then(function(attestationUrl) {
-      assert.equal(web3.toAscii(attestationUrl), ipfs_url);
+      return loan.attestationCommitment.call();
+    }).then(function(attestationCommitment) {
+      assert.equal(web3.toAscii(attestationCommitment), ipfs_url);
     });
   });
 
   it("should allow investor 1 to fund loan once it's been attested", function() {
-    return loan.fundLoan({from: accounts[2], value: web3.toWei(1, 'ether')}).then(function(result) {
+    return loan.fundLoan(accounts[2] , {from: accounts[2], value: web3.toWei(1, 'ether')}).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
                                     args: {
                                       _from: accounts[2],
                                       _value: web3.toWei(1, 'ether')
                                     }});
-      return loan.investors.call(accounts[2]);
-    }).then(function(investor) {
-      assert.equal(investor[0], web3.toWei(1, 'ether'));
-      assert.equal(investor[1], web3.toWei(0, 'ether'));
+      return loan.balanceOf(accounts[2]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(1, 'ether'));
+      // assert.equal(investor[1], web3.toWei(0, 'ether'));
     });
   });
 
   it("should allow investor 2 to fund loan and up their investment in a later tx", function() {
-    return loan.fundLoan({from: accounts[11], value: web3.toWei(0.35, 'ether')}).then(function(result) {
+    return loan.fundLoan(accounts[11], {from: accounts[11], value: web3.toWei(0.35, 'ether')}).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
                                     args: {
                                       _from: accounts[11],
                                       _value: web3.toWei(0.35, 'ether')
                                     }});
-      return loan.investors.call(accounts[11]);
-    }).then(function(investor) {
-      assert.equal(investor[0], web3.toWei(0.35, 'ether'));
-      assert.equal(investor[1], web3.toWei(0, 'ether'));
-      return loan.fundLoan({from: accounts[11], value: web3.toWei(0.2, 'ether')});
+      return loan.balanceOf(accounts[11]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(0.35, 'ether'));
+      // assert.equal(investor[1], web3.toWei(0, 'ether'));
+      return loan.fundLoan(accounts[11], {from: accounts[11], value: web3.toWei(0.2, 'ether')});
     }).then(function(result) {
       verifyEvent(result.logs[0], { event: "Investment",
                                     args: {
                                       _from: accounts[11],
                                       _value: web3.toWei(0.2, 'ether')
                                     }});
-      return loan.investors.call(accounts[11]);
-    }).then(function(investor) {
-      assert.equal(investor[0], web3.toWei(0.55, 'ether'));
-      assert.equal(investor[1], web3.toWei(0, 'ether'));
+      return loan.balanceOf(accounts[11]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(0.55, 'ether'));
+      // assert.equal(investor[1], web3.toWei(0, 'ether'));
     });
   });
 
@@ -178,7 +175,7 @@ contract('Loan', function(_accounts) {
     var lastInvestorBalanceBefore = web3.eth.getBalance(accounts[4]);
     var borrowerBalanceBefore = web3.eth.getBalance(accounts[0]);
     var etherUsedForGas = null;
-    return loan.fundLoan({from: accounts[4],
+    return loan.fundLoan(accounts[4], {from: accounts[4],
                           value: web3.toWei(3, 'ether')}).then(function(result) {
       etherUsedForGas = TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
       verifyEvent(result.logs[0], { event: "Investment",
@@ -189,10 +186,9 @@ contract('Loan', function(_accounts) {
       verifyEvent(result.logs[1], { event: "LoanTermBegin",
                                     args: {}
                                   });
-      return loan.investors.call(accounts[4]);
-    }).then(function(investor) {
-      assert.equal(investor[0], web3.toWei(1.45, 'ether'));
-      assert.equal(investor[1], web3.toWei(0, 'ether'));
+      return loan.balanceOf(accounts[4]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(1.45, 'ether'));
 
       var lastInvestorBalanceAfter = web3.eth.getBalance(accounts[4]);
       var borrowerBalanceAfter = web3.eth.getBalance(accounts[0]);
@@ -212,12 +208,12 @@ contract('Loan', function(_accounts) {
     return Loan.new(...[accounts[6]].concat(LOAN_TERMS), {from: accounts[5]}).then(function(instance) {
       borrowerBalanceBefore = web3.eth.getBalance(accounts[5]);
       second_loan = instance;
-      var ipfs_url = "/ipfs/QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
+      var ipfs_url = "QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
       return second_loan.attestToBorrower(ipfs_url, {from: accounts[6]});
     }).then(function(tx) {
       return second_loan.principal.call();
     }).then(function(principal) {
-      return second_loan.fundLoan({from: accounts[7],
+      return second_loan.fundLoan(accounts[7], {from: accounts[7],
                             value: web3.toWei(3, 'ether')});
     }).then(function(result) {
       etherUsedForGas += TEST_RPC_GAS_PRICE.times(result.receipt.gasUsed);
@@ -229,10 +225,9 @@ contract('Loan', function(_accounts) {
       verifyEvent(result.logs[1], { event: "LoanTermBegin",
                                     args: {}
                                   });
-      return second_loan.investors.call(accounts[7]);
-    }).then(function(investor) {
-      assert.equal(investor[0], web3.toWei(3, 'ether'));
-      assert.equal(investor[1], web3.toWei(0, 'ether'));
+      return second_loan.balanceOf(accounts[7]);
+    }).then(function(balance) {
+      assert.equal(balance, web3.toWei(3, 'ether'));
 
       var lastInvestorBalanceAfter = web3.eth.getBalance(accounts[7]);
       var borrowerBalanceAfter = web3.eth.getBalance(accounts[5]);
@@ -255,10 +250,10 @@ contract('Loan', function(_accounts) {
         var ipfs_url = "/ipfs/QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
         return unfulfilled_loan.attestToBorrower(ipfs_url, {from: accounts[8]});
       }).then(function(result) {
-        return unfulfilled_loan.fundLoan({from: accounts[9],
+        return unfulfilled_loan.fundLoan(accounts[9], {from: accounts[9],
                                           value: web3.toWei(1, 'ether')});
       }).then(function(result) {
-        return unfulfilled_loan.fundLoan({from: accounts[10],
+        return unfulfilled_loan.fundLoan(accounts[10], {from: accounts[10],
                                           value: web3.toWei(1, 'ether')});
       }).then(function(result) {
         investor_4_balance_before = web3.eth.getBalance(accounts[9]);
@@ -303,31 +298,25 @@ contract('Loan', function(_accounts) {
   it("should allow a lender to transfer ownership in their loan to someone else",
           function() {
     return loan.transfer(accounts[3], web3.toWei(0.33, 'ether'), {from: accounts[11]}).then(function(result) {
-      return loan.investors.call(accounts[3]);
+      return loan.balanceOf(accounts[3]);
     }).then(function(new_investor) {
-      assert.equal(new_investor[0], web3.toWei(0.33, 'ether'));
-      return loan.investors.call(accounts[11]);
+      assert.equal(new_investor, web3.toWei(0.33, 'ether'));
+      return loan.balanceOf(accounts[11]);
     }).then(function(old_investor) {
-      assert.equal(old_investor[0], 0.22);
+      assert.equal(old_investor, web3.toWei(0.22, 'ether'));
     })
   })
 
   it("should expose a totalSupply endpoint", function() {
     return loan.totalSupply().then(function(totalSupply) {
-      assert.equal(totalSupply, web3.toWei(1, 'ether'));
-    })
-  });
-
-  it("should expose a balanceOf endpoint", function() {
-    return loan.balanceOf(accounts[3]).then(function(balance) {
-      assert.equal(balanceOf, (0.55 / 3) * web3.toWei(1, 'ether'));
+      assert.equal(totalSupply, web3.toWei(3, 'ether'));
     })
   });
 
   it("should expose the transferFrom, approve, and allowance endpoints", function() {
     return assertThrows(loan.transferFrom(accounts[11], accounts[3], web3.toWei(0.22, 'ether'), {from: accounts[12]}),
       "should not allow transferFrom without approval").then(function(result) {
-      return loan.approve(accounts[12], web3.toWei(0.22, 'ether'));
+      return loan.approve(accounts[12], web3.toWei(0.22, 'ether'), {from: accounts[11]});
     }).then(function(result) {
       return loan.allowance(accounts[11], accounts[12]);
     }).then(function(allowance) {
@@ -339,10 +328,9 @@ contract('Loan', function(_accounts) {
       assert.equal(balance, 0);
       return loan.balanceOf(accounts[3]);
     }).then(function(balance) {
-      assert.equal(balance, web3.toWei(0.22, 'ether'));
+      assert.equal(balance, web3.toWei(0.55, 'ether'));
     });
-  })
-
+  });
 
   /*
     Flow of this test is expected to go as follows:
@@ -369,8 +357,8 @@ contract('Loan', function(_accounts) {
   var paybackQuantity = web3.toWei(etherOwed, 'ether');
 
   it("should allow a borrower to make his first monthly repayment", function() {
-    return loan.payBackLoan({value: paybackQuantity}).then(function(result) {
-      verifyEvent(result.logs[0], { event: "Payment",
+    return loan.periodicRepayment({value: paybackQuantity}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "PeriodicRepayment",
                                     args: {
                                       _from: accounts[0],
                                       _value: paybackQuantity
@@ -382,7 +370,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 1 to redeem his portion of the first monthly \
         payment once only", function() {
     investor_1_balance_before = web3.eth.getBalance(accounts[2]);
-    return loan.redeemInvestment({from: accounts[2]}).then(function(result) {
+    return loan.redeemValue({from: accounts[2]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[2],
@@ -397,7 +385,7 @@ contract('Loan', function(_accounts) {
                               paybackQuantity.times(proration[0]),
                               "did not prorate investor 1's payout correctly");
 
-      return assertThrows(loan.redeemInvestment({from: accounts[2]}),
+      return assertThrows(loan.redeemValue({from: accounts[2]}),
                       "should not allow investor 1 redeem when he's already \
                       redeemed his portion of this pay back.");
     })
@@ -406,7 +394,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 2 to redeem her portion of the first monthly \
         payment", function() {
     investor_2_balance_before = web3.eth.getBalance(accounts[3]);
-    return loan.redeemInvestment({from: accounts[3]}).then(function(result) {
+    return loan.redeemValue({from: accounts[3]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[3],
@@ -422,8 +410,8 @@ contract('Loan', function(_accounts) {
   });
 
   it("should allow borrower to make his final monthly payment", function() {
-    return loan.payBackLoan({value: paybackQuantity}).then(function(result) {
-      verifyEvent(result.logs[0], { event: "Payment",
+    return loan.periodicRepayment({value: paybackQuantity}).then(function(result) {
+      verifyEvent(result.logs[0], { event: "PeriodicRepayment",
                                     args: {
                                       _from: accounts[0],
                                       _value: paybackQuantity
@@ -434,7 +422,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 1 to redeem his portion of the final monthly \
         payment only once", function() {
     investor_1_balance_before = web3.eth.getBalance(accounts[2]);
-    return loan.redeemInvestment({from: accounts[2]}).then(function(result) {
+    return loan.redeemValue({from: accounts[2]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[2],
@@ -448,7 +436,7 @@ contract('Loan', function(_accounts) {
       assertBigNumberEquality(investor_1_payout, paybackQuantity.times(proration[0]),
                     "did not prorate investor 1's second payout correctly");
 
-      return assertThrows(loan.redeemInvestment({from: accounts[2]}),
+      return assertThrows(loan.redeemValue({from: accounts[2]}),
                           "should not allow investor 1 redeem when he's already \
                           redeemed the full portion of his share of the loan");
     });
@@ -457,7 +445,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 2 to redeem her portion of the final monthly \
         payment", function() {
     investor_2_balance_before = web3.eth.getBalance(accounts[3]);
-    loan.redeemInvestment({from: accounts[3]}).then(function(result) {
+    loan.redeemValue({from: accounts[3]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[3],
@@ -474,7 +462,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 3 to redeem his unclaimed portion of the total two \
         monthly payments", function() {
     investor_3_balance_before = web3.eth.getBalance(accounts[4]);
-    return loan.redeemInvestment({from: accounts[4]}).then(function(result) {
+    return loan.redeemValue({from: accounts[4]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[4],

@@ -35,7 +35,7 @@ function createNoiseTransactions(accounts, numTxs=2) {
   return promise;
 }
 
-var Loan = artifacts.require("./Loan.sol");
+var Loan = artifacts.require("./ZeppelinLoan.sol");
 var testLoanData = require('./data/test_loan_terms.json');
 
 function assertLoanCorrectlyDeployed(address, loanJson) {
