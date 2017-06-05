@@ -1,54 +1,63 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "./DSMath.sol";
+import "./zeppelin/SafeMath.sol";
+import "./Attestable.sol";
+import "./TimeLocked.sol";
+import "./RedeemableToken.sol";
 
-contract Loan {
-  enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
-  event Payment(address indexed _from, uint128 _value, uint256 _timestamp);
-  event Investment(address indexed _from, uint128 _value, uint256 _timestamp);
-  event InvestmentRedeemed(address indexed _to, uint128 _value, uint256 _timestamp);
-  event LoanTermBegin(uint256 _timestamp);
-  event LoanAttested(uint256 _timestamp);
 
-  // Requested principal of the loan
-  uint128 public principal;
-  // Length of each period
-  uint128 public periodLength;
-  // Unit of time referred to in the period length (i.e. 60 Months vs. 5 Years)
-  PeriodType public periodType;
-  // Interest rate charged on basis of every period
-  uint128 public interestRate;
-  // True if interest is compounded at each period, false if not
-  bool public isInterestCompounded;
-  // Length in number of periods
-  // NOTE: If period is of type "FixedDate", termLength represents the UNIX
-  //       timestamp of the repayment date.
-  uint128 public termLength;
-  // Timestamp before which investors will not be allowed to withdraw their funds
-  uint128 public fundingPeriodTimeLock;
+/**
+ * @title Loan
+ *
+ * @dev Simple unsecured loan implementation with simple interest.
+ * @dev Heavily based on the CrowdsaleToken contract in the
+ *        OpenZeppelin reference contracts.
+ */
+contract Loan is RedeemableToken, Attestable, TimeLocked {
+  /*
+   EVENTS
+  */
+  event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
+  event Investment(address indexed _from, uint _value, uint _timestamp);
+  event LoanTermBegin(uint _timestamp);
 
   address public borrower;
-  address public attestor;
 
-  bytes public attestationUrl;
+  /*
+    ========================================================================
+      LOAN TERMS
+    ========================================================================
+    Period: refers to the time period between each repayment due
+      date
+    PeriodType: refers to the unit of time in which the period and term length
+      are denominated
+    periodLength: refers to the number of time units of PeriodType are in any
+      given payment period.
+        (i.e. period = periodLength * periodType)
+    termLength: refers to the number of time units of PeriodType that are in
+      the entire loan's term
+    Principal: refers to the amount of Wei requested by a borrower
+    interestRate: is the percentage interest owed on top principal repayments
+      at each payment period's due date (non-compounding)
+    decimals: since floats can't natively be represented in Solidity, decimals
+      refers to the number of decimal points represented by interestRate
+        (i.e. interestRate = % Interest * (10 ** decimals))
+  */
+  enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
+  PeriodType public periodType;
+  uint public periodLength;
+  uint public termLength;
+  uint public principal;
+  uint public interestRate;
+  uint public constant decimals = 18;
 
-  struct Investor {
-    uint128 amountInvested;
-    uint128 amountRedeemed;
-  }
+  uint public constant PRICE = 1; // 1 Ether = 1 Loan Token
+  uint public totalInvested;
 
-  mapping(address => Investor) public investors;
-  uint128 public totalInvested;
-  uint128 public totalRepaid;
 
-  modifier onlyInvestors() {
-    if (investors[msg.sender].amountInvested == 0)
-      throw;
-    _;
-  }
 
-  modifier afterTimelock() {
-    if (block.timestamp < fundingPeriodTimeLock)
+  modifier beforeLoanFunded() {
+    if (totalInvested >= principal)
       throw;
     _;
   }
@@ -59,54 +68,58 @@ contract Loan {
     _;
   }
 
-  modifier beforeLoanFunded() {
-    if (totalInvested >= principal)
-      throw;
-    _;
-  }
-
-  modifier afterLoanAttested() {
-    if (attestationUrl.length == 0)
-      throw;
-    _;
-  }
-
-  function Loan(address _attestorAddr,
-                uint128 _principal,
-                PeriodType _periodType,
-                uint128 _interestRate,
-                bool _isInterestCompounded,
-                uint128 _termLength,
-                uint128 _fundingPeriodTimeLock) {
+  function ZeppelinLoan(address _attestor,
+                        uint _principal,
+                        PeriodType _periodType,
+                        uint _interestRate,
+                        uint _termLength,
+                        uint _fundingPeriodTimeLock)
+            Attestable(_attestor)
+            TimeLocked(_fundingPeriodTimeLock) {
     borrower = msg.sender;
-    attestor = _attestorAddr;
     principal = _principal;
+    totalSupply = _principal;
     periodType = _periodType;
     interestRate = _interestRate;
-    isInterestCompounded = _isInterestCompounded;
     termLength = _termLength;
-    fundingPeriodTimeLock = _fundingPeriodTimeLock;
   }
 
-  function attestToBorrower(bytes _attestationUrl) {
-    if (msg.sender != attestor)
-      throw;
-    attestationUrl = _attestationUrl;
-    LoanAttested(block.timestamp);
-  }
-
-  function fundLoan() payable afterLoanAttested beforeLoanFunded {
-    uint128 principalRemaining = principal - totalInvested;
-    uint128 currentInvestmentAmount = DSMath.cast(DSMath.min(msg.value, principalRemaining));
-    investors[msg.sender].amountInvested += currentInvestmentAmount;
-    totalInvested += currentInvestmentAmount;
-
-    Investment(msg.sender, currentInvestmentAmount, block.timestamp);
-
-    // If requested loan principal is fully funded, transfer balance to borrower
-    if (totalInvested == principal) {
-      if(!borrower.send(principal))
+  /**
+   * @dev Fallback function which receives ether and, the loan is fully funded,
+   * refunds the ether to the sender, and, if the loan is not fully funded,
+   * sends the appropriate number of loan tokens to the sender.
+   */
+  function () payable {
+    if (loanFullyFunded()) {
+      if (!msg.sender.send(msg.value)) {
         throw;
+      }
+    } else {
+      fundLoan(msg.sender);
+    }
+  }
+
+  /**
+   * @dev Creates tokens and send to the specified address.
+   * @param tokenRecipient The address which will recieve the new loan tokens.
+   */
+  function fundLoan(address tokenRecipient) payable afterLoanAttested {
+    if (msg.value == 0) {
+      throw;
+    }
+
+    uint remainingPrincipal = principal.sub(totalInvested);
+    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
+
+    totalInvested = totalInvested.add(currentInvestmentAmount);
+
+    balances[tokenRecipient] = balances[tokenRecipient].add(currentInvestmentAmount);
+    Investment(tokenRecipient, currentInvestmentAmount, block.timestamp);
+
+    if (loanFullyFunded()) {
+      if (!borrower.send(principal)) {
+        throw;
+      }
       LoanTermBegin(block.timestamp);
     }
 
@@ -116,29 +129,11 @@ contract Loan {
     }
   }
 
-  function payBackLoan() payable {
-    if (msg.value == 0)
-      throw;
-    Payment(msg.sender, DSMath.cast(msg.value), block.timestamp);
-    totalRepaid += DSMath.cast(msg.value);
-  }
+  function withdrawInvestment() afterTimeLock beforeLoanFunded {
+    uint investmentRefund = balanceOf(msg.sender);
+    balances[msg.sender] = 0;
 
-  function redeemInvestment() onlyInvestors afterLoanFunded {
-    Investor investor = investors[msg.sender];
-    uint128 investorEntitledTo = DSMath.wdiv(DSMath.wmul(investor.amountInvested, totalRepaid), totalInvested);
-    uint128 remainingBalance = investorEntitledTo - investor.amountRedeemed;
-    if (remainingBalance == 0)
-      throw;
-    investor.amountRedeemed += remainingBalance;
-    if (!msg.sender.send(remainingBalance))
-      throw;
-    InvestmentRedeemed(msg.sender, remainingBalance, block.timestamp);
-  }
-
-  function withdrawInvestment() onlyInvestors afterTimelock beforeLoanFunded {
-    uint128 investmentRefund = investors[msg.sender].amountInvested;
-    totalInvested -= investmentRefund;
-    delete investors[msg.sender];
+    totalInvested = totalInvested.sub(investmentRefund);
 
     if (!msg.sender.send(investmentRefund))
       throw;
@@ -147,8 +142,29 @@ contract Loan {
       selfdestruct(msg.sender);
   }
 
-  function transfer(address to) onlyInvestors {
-    investors[to] = investors[msg.sender];
-    delete investors[msg.sender];
+  function periodicRepayment() payable afterLoanFunded {
+    if (msg.value == 0)
+      throw;
+
+    redeemableValue = redeemableValue.add(msg.value);
+
+    PeriodicRepayment(msg.sender, msg.value, block.timestamp);
+  }
+
+  function isRedeemable(address owner)
+              afterLoanFunded returns (bool redeemable) {
+    return (balanceOf(owner) > 0);
+  }
+
+  /**
+   * @dev replace this with any other price function
+   * @return The price per unit of token.
+   */
+  function getPrice() constant returns (uint result) {
+    return PRICE;
+  }
+
+  function loanFullyFunded() returns (bool funded) {
+    return (totalInvested == principal);
   }
 }
