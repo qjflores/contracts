@@ -105,7 +105,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(address tokenRecipient) payable afterLoanAttested {
+  function fundLoan(address tokenRecipient) payable afterAttestedTo {
     if (msg.value == 0) {
       throw;
     }

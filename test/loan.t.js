@@ -109,12 +109,12 @@ contract('Loan', function(_accounts) {
   it("should allow an RAA to attest to the loan", function() {
     var ipfs_url = "QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
     var invalidAttestorTransaction =
-      loan.attestToBorrower(ipfs_url, {from: accounts[4]});
+      loan.attest(ipfs_url, {from: accounts[4]});
     return assertThrows(invalidAttestorTransaction,
                         "should only allow the pre-set attestor to attest",
                         loan.attestationCommitment.call()).then(function(attestationCommitment) {
       assert.equal(attestationCommitment, '0x');
-      return loan.attestToBorrower(ipfs_url, {from: accounts[1]});
+      return loan.attest(ipfs_url, {from: accounts[1]});
     }).then(function(result) {
       verifyEvent(result.logs[0], { event: "LoanAttested",
                                     args: {}
@@ -209,7 +209,7 @@ contract('Loan', function(_accounts) {
       borrowerBalanceBefore = web3.eth.getBalance(accounts[5]);
       second_loan = instance;
       var ipfs_url = "QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
-      return second_loan.attestToBorrower(ipfs_url, {from: accounts[6]});
+      return second_loan.attest(ipfs_url, {from: accounts[6]});
     }).then(function(tx) {
       return second_loan.principal.call();
     }).then(function(principal) {
@@ -248,7 +248,7 @@ contract('Loan', function(_accounts) {
                       {from: accounts[7]}).then(function(instance) {
         unfulfilled_loan = instance;
         var ipfs_url = "/ipfs/QmdP6Hw8MnbRi2dqrdhVd1YgvgWXoteiSjBwkd5jYHhyPJ";
-        return unfulfilled_loan.attestToBorrower(ipfs_url, {from: accounts[8]});
+        return unfulfilled_loan.attest(ipfs_url, {from: accounts[8]});
       }).then(function(result) {
         return unfulfilled_loan.fundLoan(accounts[9], {from: accounts[9],
                                           value: web3.toWei(1, 'ether')});

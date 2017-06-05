@@ -3,7 +3,11 @@ pragma solidity ^0.4.8;
 
 /**
  * @title TimeLocked
- * @dev The TimeLocked contract....
+ * @dev The TimeLocked contract encapsulates basic modifiers for any contract
+ *    with time locked functionality.
+ *    Note: block timestamps are by no means accurate in ethereum, but have
+ *      an accepted margin error of 900 seconds, so timelocks should not be
+ *      specified with an expectation of subhourly accuracy.
  */
 contract TimeLocked {
    uint public timeLock;
