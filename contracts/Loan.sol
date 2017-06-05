@@ -14,7 +14,7 @@ import "./RedeemableToken.sol";
  *        OpenZeppelin reference contracts.
  */
 contract Loan is RedeemableToken, Attestable, TimeLocked {
-  /*
+  /**
    EVENTS
   */
   event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
@@ -23,9 +23,8 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
 
   address public borrower;
 
-  /*
-    ========================================================================
-      LOAN TERMS
+  /**
+    LOAN TERMS
     ========================================================================
     Period: refers to the time period between each repayment due
       date
@@ -54,8 +53,10 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
   uint public constant PRICE = 1; // 1 Ether = 1 Loan Token
   uint public totalInvested;
 
-
-
+  /*
+      MODIFIERS
+    ========================================================================
+  */
   modifier beforeLoanFunded() {
     if (totalInvested >= principal)
       throw;
@@ -68,7 +69,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
     _;
   }
 
-  function ZeppelinLoan(address _attestor,
+  function Loan(address _attestor,
                         uint _principal,
                         PeriodType _periodType,
                         uint _interestRate,
@@ -85,22 +86,23 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
   }
 
   /**
-   * @dev Fallback function which receives ether and, the loan is fully funded,
-   * refunds the ether to the sender, and, if the loan is not fully funded,
+   * @dev Fallback function which receives ether and, if the loan is fully funded,
+   * throws, and, if the loan is not fully funded,
    * sends the appropriate number of loan tokens to the sender.
    */
   function () payable {
     if (loanFullyFunded()) {
-      if (!msg.sender.send(msg.value)) {
-        throw;
-      }
+      throw;
     } else {
       fundLoan(msg.sender);
     }
   }
 
   /**
-   * @dev Creates tokens and send to the specified address.
+   * @dev Funds the loan request, refunds any remaining ether if the transaction
+   *    fully funds the loan, issues tokens representing ownership in the loan
+   *    to tokenRecipient, and transfers the principal to the borrower if the
+   *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
   function fundLoan(address tokenRecipient) payable afterLoanAttested {
@@ -129,6 +131,12 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
     }
   }
 
+  /**
+   * @dev If the time lock period has lapsed and the loan is, as of yet,
+   *    not fully funded, withdrawInvestment allows investors to withdraw
+   *    their deposited ether from the contract.  If the contract is fully
+   *    emptied out, the contract self destructs.
+   */
   function withdrawInvestment() afterTimeLock beforeLoanFunded {
     uint investmentRefund = balanceOf(msg.sender);
     balances[msg.sender] = 0;
@@ -142,6 +150,10 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
       selfdestruct(msg.sender);
   }
 
+  /**
+   * @dev Method used by borrowers to make repayments to the loan contract
+   *  at the end of each of payment period.
+   */
   function periodicRepayment() payable afterLoanFunded {
     if (msg.value == 0)
       throw;
@@ -151,19 +163,30 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
     PeriodicRepayment(msg.sender, msg.value, block.timestamp);
   }
 
+  /**
+   * @dev Overrides the isRedeemable abstract funciton in RedeemableToken
+   *   in order to specify that investors can only withdraw the returned
+   *    principal + interest once a loan has been fully funded and
+   *    the borrower is in the midst of their loan term.
+   * @return Whether investors should be allowed to redeem repayments yet.
+   */
   function isRedeemable(address owner)
               afterLoanFunded returns (bool redeemable) {
     return (balanceOf(owner) > 0);
   }
 
   /**
-   * @dev replace this with any other price function
+   * @dev Returns the price of each loan token (namely, 1 Ether = 1 Loan Token)
    * @return The price per unit of token.
    */
   function getPrice() constant returns (uint result) {
     return PRICE;
   }
 
+  /**
+   * @dev Loan is considered fully funded when the desired principal is raised.
+   * @return bool: Whether the loan is fully funded.
+   */
   function loanFullyFunded() returns (bool funded) {
     return (totalInvested == principal);
   }

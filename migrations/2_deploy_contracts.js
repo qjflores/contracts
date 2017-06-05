@@ -1,5 +1,5 @@
 var DSMath = artifacts.require("./DSMath.sol")
-var Loan = artifacts.require("./ZeppelinLoan.sol");
+var Loan = artifacts.require("./Loan.sol");
 
 var AMORTIZATION_SCHEDULE_MONTHLY = 1;
 

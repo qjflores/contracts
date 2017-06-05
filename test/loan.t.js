@@ -62,7 +62,7 @@ PeriodType = {
   ACCOUNT 4: INVESTOR 3
 */
 
-var Loan = artifacts.require("./ZeppelinLoan.sol");
+var Loan = artifacts.require("./Loan.sol");
 
 // set timelock date for 14 days in future
 var timeLockDate = web3.eth.getBlock('latest').timestamp + 14*24*3600;
