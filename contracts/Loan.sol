@@ -70,17 +70,19 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
   }
 
   function Loan(address _attestor,
-                        uint _principal,
-                        PeriodType _periodType,
-                        uint _interestRate,
-                        uint _termLength,
-                        uint _fundingPeriodTimeLock)
+                uint _principal,
+                PeriodType _periodType,
+                uint _periodLength,
+                uint _interestRate,
+                uint _termLength,
+                uint _fundingPeriodTimeLock)
             Attestable(_attestor)
             TimeLocked(_fundingPeriodTimeLock) {
     borrower = msg.sender;
     principal = _principal;
     totalSupply = _principal;
     periodType = _periodType;
+    periodLength = _periodLength;
     interestRate = _interestRate;
     termLength = _termLength;
   }

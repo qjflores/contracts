@@ -67,7 +67,7 @@ var Loan = artifacts.require("./Loan.sol");
 // set timelock date for 14 days in future
 var timeLockDate = web3.eth.getBlock('latest').timestamp + 14*24*3600;
 const TEST_RPC_GAS_PRICE = web3.toBigNumber('100000000000');
-const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly,
+const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly, 1,
                       web3.toWei(.05, 'ether'), 2, timeLockDate];
 contract('Loan', function(_accounts) {
   accounts = _accounts;
@@ -81,12 +81,15 @@ contract('Loan', function(_accounts) {
       return loan.periodType.call();
     }).then(function(periodType) {
       assert.equal(periodType, LOAN_TERMS[1]);
+      return loan.periodLength.call();
+    }).then(function(periodLength) {
+      assert.equal(periodLength, LOAN_TERMS[2]);
       return loan.interestRate.call();
     }).then(function(interestRate) {
-      assert.equal(interestRate, LOAN_TERMS[2]);
+      assert.equal(interestRate, LOAN_TERMS[3]);
       return loan.termLength.call();
     }).then(function(termLength) {
-      assert.equal(termLength, LOAN_TERMS[3])
+      assert.equal(termLength, LOAN_TERMS[4])
       return loan.timeLock.call();
     }).then(function(loanTimeLock) {
       assert.equal(loanTimeLock, timeLockDate);
