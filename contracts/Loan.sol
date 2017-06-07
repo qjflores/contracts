@@ -36,18 +36,17 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
     termLength: refers to the number of time units of PeriodType that are in
       the entire loan's term
     Principal: refers to the amount of Wei requested by a borrower
-    interestRate: is the percentage interest owed on top principal repayments
-      at each payment period's due date (non-compounding)
+    interest: is the amount of interest in ether owed on top principal repayments
+      at each payment period's due date (TODO: Add compounding interest)
     decimals: since floats can't natively be represented in Solidity, decimals
-      refers to the number of decimal points represented by interestRate
-        (i.e. interestRate = % Interest * (10 ** decimals))
+      refers to the number of decimal points represented 
   */
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
   PeriodType public periodType;
   uint public periodLength;
   uint public termLength;
   uint public principal;
-  uint public interestRate;
+  uint public interest;
   uint public constant decimals = 18;
 
   uint public constant PRICE = 1; // 1 Ether = 1 Loan Token
@@ -73,7 +72,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
                 uint _principal,
                 PeriodType _periodType,
                 uint _periodLength,
-                uint _interestRate,
+                uint _interest,
                 uint _termLength,
                 uint _fundingPeriodTimeLock)
             Attestable(_attestor)
@@ -83,7 +82,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
     totalSupply = _principal;
     periodType = _periodType;
     periodLength = _periodLength;
-    interestRate = _interestRate;
+    interest = _interest;
     termLength = _termLength;
   }
 

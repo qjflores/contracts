@@ -84,9 +84,9 @@ contract('Loan', function(_accounts) {
       return loan.periodLength.call();
     }).then(function(periodLength) {
       assert.equal(periodLength, LOAN_TERMS[2]);
-      return loan.interestRate.call();
-    }).then(function(interestRate) {
-      assert.equal(interestRate, LOAN_TERMS[3]);
+      return loan.interest.call();
+    }).then(function(interest) {
+      assert.equal(interest, LOAN_TERMS[3]);
       return loan.termLength.call();
     }).then(function(termLength) {
       assert.equal(termLength, LOAN_TERMS[4])
