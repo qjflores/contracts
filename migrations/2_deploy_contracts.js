@@ -1,9 +1,27 @@
-var DSMath = artifacts.require("./DSMath.sol")
+var TimeLockLib = artifacts.require('./TimeLockLib.sol');
+var SafeMath = artifacts.require('./SafeMath.sol');
+var AttestationLib = artifacts.require('./AttestationLib.sol');
+var RedeemableTokenLib = artifacts.require("./RedeemableTokenLib.sol");
+var LoanLib = artifacts.require('./LoanLib.sol');
 var Loan = artifacts.require("./Loan.sol");
 
-var AMORTIZATION_SCHEDULE_MONTHLY = 1;
-
 module.exports = function(deployer, network, accounts) {
-  deployer.deploy(Loan, accounts[0], 8,
-    6, 3, AMORTIZATION_SCHEDULE_MONTHLY);
+  deployer.deploy(TimeLockLib);
+  deployer.deploy(SafeMath);
+  deployer.deploy(AttestationLib);
+  deployer.link(SafeMath, RedeemableTokenLib);
+  deployer.deploy(RedeemableTokenLib);
+  deployer.link(TimeLockLib, LoanLib);
+  deployer.link(SafeMath, LoanLib);
+  deployer.link(AttestationLib, LoanLib);
+  deployer.link(RedeemableTokenLib, LoanLib);
+
+  deployer.deploy(LoanLib);
+
+  deployer.link(LoanLib, Loan);
+  deployer.link(RedeemableTokenLib, Loan);
+  deployer.link(AttestationLib, Loan);
+  deployer.link(TimeLockLib, Loan);
+
+  deployer.deploy(Loan);
 };

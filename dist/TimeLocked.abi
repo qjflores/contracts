@@ -1,1 +1,0 @@
-[{"constant":true,"inputs":[],"name":"timeLock","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"_timeLock","type":"uint256"}],"payable":false,"type":"constructor"}]

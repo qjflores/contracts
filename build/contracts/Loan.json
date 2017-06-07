@@ -5,74 +5,15 @@
       "constant": false,
       "inputs": [
         {
-          "name": "_spender",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
+          "name": "uuid",
+          "type": "bytes32"
         }
       ],
-      "name": "approve",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "totalSupply",
+      "name": "getAttestor",
       "outputs": [
         {
           "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "loanFullyFunded",
-      "outputs": [
-        {
-          "name": "funded",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_from",
           "type": "address"
-        },
-        {
-          "name": "_to",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "transferFrom",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "redeemableValue",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
         }
       ],
       "payable": false,
@@ -92,169 +33,12 @@
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "balanceRedeemed",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
       "constant": false,
       "inputs": [
         {
-          "name": "_attestationCommitment",
-          "type": "bytes"
-        }
-      ],
-      "name": "attest",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "periodType",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "totalInvested",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_owner",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-        {
-          "name": "balance",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "isRedeemable",
-      "outputs": [
-        {
-          "name": "redeemable",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "termLength",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "borrower",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "periodicRepayment",
-      "outputs": [],
-      "payable": true,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "PRICE",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "redeemValue",
-      "outputs": [],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getPrice",
-      "outputs": [
-        {
-          "name": "result",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
+          "name": "uuid",
+          "type": "bytes32"
+        },
         {
           "name": "_to",
           "type": "address"
@@ -270,9 +54,14 @@
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "principal",
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getPeriodLength",
       "outputs": [
         {
           "name": "",
@@ -284,16 +73,127 @@
     },
     {
       "constant": false,
-      "inputs": [],
-      "name": "withdrawInvestment",
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
       "outputs": [],
       "payable": false,
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "attestationCommitment",
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getPrincipal",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "attestationCommitment",
+          "type": "bytes"
+        }
+      ],
+      "name": "attest",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getBorrower",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getPeriodType",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTimelock",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getAttestation",
       "outputs": [
         {
           "name": "",
@@ -304,82 +204,12 @@
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "interest",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "attestor",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "timeLock",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "periodLength",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_owner",
-          "type": "address"
-        },
-        {
-          "name": "_spender",
-          "type": "address"
-        }
-      ],
-      "name": "allowance",
-      "outputs": [
-        {
-          "name": "remaining",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
       "constant": false,
       "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
         {
           "name": "tokenRecipient",
           "type": "address"
@@ -391,7 +221,47 @@
       "type": "function"
     },
     {
+      "constant": false,
       "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "redeemValue",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "_borrower",
+          "type": "address"
+        },
         {
           "name": "_attestor",
           "type": "address"
@@ -421,8 +291,159 @@
           "type": "uint256"
         }
       ],
+      "name": "createLoan",
+      "outputs": [],
       "payable": false,
-      "type": "constructor"
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "_spender",
+          "type": "address"
+        },
+        {
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "_owner",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "name": "balance",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRedeemableValue",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "periodicRepayment",
+      "outputs": [],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        },
+        {
+          "name": "_owner",
+          "type": "address"
+        },
+        {
+          "name": "_spender",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "name": "remaining",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTermLength",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getInterest",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "withdrawInvestment",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
     },
     {
       "payable": true,
@@ -431,6 +452,11 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
         {
           "indexed": true,
           "name": "_from",
@@ -455,6 +481,11 @@
       "inputs": [
         {
           "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
           "name": "_from",
           "type": "address"
         },
@@ -476,6 +507,16 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "name": "_borrower",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "name": "_timestamp",
           "type": "uint256"
@@ -488,19 +529,93 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "_borrower",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "_attestor",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "name": "_timestamp",
           "type": "uint256"
         }
       ],
-      "name": "LoanAttested",
+      "name": "LoanCreated",
       "type": "event"
     },
     {
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
           "indexed": false,
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "_uuid",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
           "name": "_to",
           "type": "address"
         },
@@ -522,68 +637,775 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "name": "message",
-          "type": "uint256"
-        }
-      ],
-      "name": "Log",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
-          "name": "owner",
-          "type": "address"
+          "name": "_uuid",
+          "type": "bytes32"
         },
         {
           "indexed": true,
-          "name": "spender",
+          "name": "_attestor",
           "type": "address"
         },
         {
           "indexed": false,
-          "name": "value",
+          "name": "_timestamp",
           "type": "uint256"
         }
       ],
-      "name": "Approval",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
-        }
-      ],
-      "name": "Transfer",
+      "name": "Attested",
       "type": "event"
     }
   ],
-  "unlinked_binary": "0x6060604052346100005760405160e08061108e83398101604090815281516020830151918301516060840151608085015160a086015160c09096015193959293919290915b805b875b60058054600160a060020a031916600160a060020a0383161790555b5060078190555b5060088054600160a060020a03191633600160a060020a031617808255600b889055600088905586919060a060020a60ff0219167401000000000000000000000000000000000000000083600481116100005702179055506009849055600c839055600a8290555b505050505050505b610fa4806100ea6000396000f3006060604052361561014e5763ffffffff60e060020a600035041663095ea7b3811461017357806318160ddd1461019157806319c43699146101b057806323b872dd146101d15780633045b968146101f5578063313ce567146102145780633325f5d914610233578063430768ab1461025e57806346e0fbae146102b35780635216aeec146102e157806370a082311461030057806376db6c8d1461032b57806379b18cd1146103585780637df1f1b91461037757806381324e8c146103a05780638d859f3e146103aa5780638e0de8ba146103c957806398d5fdca146103d8578063a9059cbb146103f7578063ba5d307814610415578063bf3e394e14610434578063c168709e14610443578063c392f766146104d0578063cada25c2146104ef578063d085835a14610518578063d2ca211514610537578063dd62ed3e14610556578063e48f6faf14610587575b6101715b61015a61059d565b1561016457610000565b61016d336105a8565b5b5b565b005b3461000057610171600160a060020a0360043516602435610755565b005b346100005761019e6107f4565b60408051918252519081900360200190f35b34610000576101bd61059d565b604080519115158252519081900360200190f35b3461000057610171600160a060020a03600435811690602435166044356107fa565b005b346100005761019e61091d565b60408051918252519081900360200190f35b346100005761019e610923565b60408051918252519081900360200190f35b346100005761019e600160a060020a0360043516610928565b60408051918252519081900360200190f35b3461000057610171600480803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284375094965061093a95505050505050565b005b34610000576102c0610a4e565b6040518082600481116100005760ff16815260200191505060405180910390f35b346100005761019e610a6f565b60408051918252519081900360200190f35b346100005761019e600160a060020a0360043516610a75565b60408051918252519081900360200190f35b34610000576101bd600160a060020a0360043516610a94565b604080519115158252519081900360200190f35b346100005761019e610abc565b60408051918252519081900360200190f35b3461000057610384610ac2565b60408051600160a060020a039092168252519081900360200190f35b610171610ad1565b005b346100005761019e610b4a565b60408051918252519081900360200190f35b3461000057610171610b4f565b005b346100005761019e610c77565b60408051918252519081900360200190f35b3461000057610171600160a060020a0360043516602435610c7d565b005b346100005761019e610d4a565b60408051918252519081900360200190f35b3461000057610171610d50565b005b3461000057610450610df7565b604080516020808252835181830152835191928392908301918501908083838215610496575b80518252602083111561049657601f199092019160209182019101610476565b505050905090810190601f1680156104c25780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b346100005761019e610e85565b60408051918252519081900360200190f35b3461000057610384610e8b565b60408051600160a060020a039092168252519081900360200190f35b346100005761019e610e9a565b60408051918252519081900360200190f35b346100005761019e610ea0565b60408051918252519081900360200190f35b346100005761019e600160a060020a0360043581169060243516610ea6565b60408051918252519081900360200190f35b610171600160a060020a03600435166105a8565b005b600b54600d54145b90565b60065460009081906002600019610100600184161502019091160415156105ce57610000565b3415156105da57610000565b600d54600b546105ef9163ffffffff610ed316565b91506105fb8234610eec565b600d54909150610611908263ffffffff610f0616565b600d55600160a060020a03831660009081526001602052604090205461063d908263ffffffff610f0616565b600160a060020a0384166000818152600160209081526040918290209390935580518481524293810193909352805191927f8514357b17ccbde354811f827b94585a7ab01b4034aa86a807b7cc2c100b7be8929081900390910190a26106a161059d565b1561071057600854600b54604051600160a060020a039092169181156108fc0291906000818181858888f1935050505015156106dc57610000565b6040805142815290517f1fffbc3377eb301e7883a5b22ed1facf63bfb931ab8ebca72c26cb81ae0fbc7e9181900360200190a15b6000813403111561074d57604051600160a060020a033316903483900380156108fc02916000818181858888f19350505050151561074d57610000565b5b5b5b505050565b80158015906107885750600160a060020a0333811660009081526002602090815260408083209386168352929052205415155b1561079257610000565b600160a060020a03338116600081815260026020908152604080832094871680845294825291829020859055815185815291517f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b9259281900390910190a35b5050565b60005481565b60006060606436101561080c57610000565b600160a060020a038086166000908152600260209081526040808320338516845282528083205493881683526001909152902054909250610853908463ffffffff610f0616565b600160a060020a038086166000908152600160205260408082209390935590871681522054610888908463ffffffff610ed316565b600160a060020a0386166000908152600160205260409020556108b1828463ffffffff610ed316565b600160a060020a038087166000818152600260209081526040808320338616845282529182902094909455805187815290519288169391927fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef929181900390910190a35b5b5050505050565b60035481565b601281565b60046020526000908152604090205481565b60055433600160a060020a0390811691161461095557610000565b60006006805460018160011615610100020316600290049050111561097957610000565b8060069080519060200190828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106109c557805160ff19168380011785556109f2565b828001600101855582156109f2579182015b828111156109f25782518255916020019190600101906109d7565b5b50610a139291505b80821115610a0f57600081556001016109fb565b5090565b50506040805142815290517fcd631b938996ce5740ff7632813097406a4e3d432a8aaa0baed9792ea97084e99181900360200190a15b5b5b50565b60085474010000000000000000000000000000000000000000900460ff1681565b600d5481565b600160a060020a0381166000908152600160205260409020545b919050565b6000600b54600d541015610aa757610000565b6000610ab283610a75565b1190505b5b919050565b600a5481565b600854600160a060020a031681565b600b54600d541015610ae257610000565b341515610aee57610000565b600354610b01903463ffffffff610f0616565b600355604080513481524260208201528151600160a060020a033316927f18f98530aebbffbf8449f9c6ca4abcb65b320c17d19df6b2244eedc3349b8875928290030190a25b5b565b600181565b60006000610b5c33610a94565b1515610b6757610000565b610b94600054610b88600354610b7c33610a75565b9063ffffffff610f2216565b9063ffffffff610f4e16565b600160a060020a03331660009081526004602052604090205490925082039050801515610bc057610000565b600160a060020a033316600090815260046020526040902054610be9908263ffffffff610f0616565b600160a060020a033316600081815260046020526040808220939093559151909183156108fc02918491818181858888f193505050501515610c2a57610000565b60408051600160a060020a033316815260208101839052428183015290517fb2e011f7561cad3d4f94ede484a09ba367934c0a295f35f67dda16d8b41329e99181900360600190a15b5050565b60015b90565b60406044361015610c8d57610000565b600160a060020a033316600090815260016020526040902054610cb6908363ffffffff610ed316565b600160a060020a033381166000908152600160205260408082209390935590851681522054610ceb908363ffffffff610f0616565b600160a060020a038085166000818152600160209081526040918290209490945580518681529051919333909316927fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef92918290030190a35b5b505050565b600b5481565b6007546000904211610d6157610000565b600b54600d5410610d7157610000565b610d7a33610a75565b600160a060020a033316600090815260016020526040812055600d54909150610da9908263ffffffff610ed316565b600d55604051600160a060020a0333169082156108fc029083906000818181858888f193505050501515610ddc57610000565b600d541515610a495733600160a060020a0316ff5b5b5b5b50565b6006805460408051602060026001851615610100026000190190941693909304601f81018490048402820184019092528181529291830182828015610e7d5780601f10610e5257610100808354040283529160200191610e7d565b820191906000526020600020905b815481529060010190602001808311610e6057829003601f168201915b505050505081565b600c5481565b600554600160a060020a031681565b60075481565b60095481565b600160a060020a038083166000908152600260209081526040808320938516835292905220545b92915050565b6000610ee183831115610f68565b508082035b92915050565b6000818310610efb5781610efd565b825b90505b92915050565b6000828201610f1784821015610f68565b8091505b5092915050565b6000828202610f17841580610f3e575083858381156100005704145b610f68565b8091505b5092915050565b6000600082848115610000570490508091505b5092915050565b801515610a4957610000565b5b505600a165627a7a723058200ebc249e105e133881db548488597b3bb44d04c639780c79fd935c78ed767eb60029",
+  "unlinked_binary": "0x606060405234610000575b610e2c806100196000396000f300606060405236156101175763ffffffff60e060020a6000350416632e9338388114610124578063313ce567146101505780633feb1bd81461016f5780634d37230414610190578063500d2f6d146101b25780635ecc1317146101d957806363671b60146101fb578063728c3ea214610251578063797af7631461027d57806379a55806146102ae578063a3112a64146102d0578063a4a19f3814610360578063a5b90b1c14610379578063b524abcf146101d9578063be5f4d52146103ad578063bf1ed1eb146103e7578063c203823614610408578063ccf21e8014610436578063d50286ea14610458578063e88a317814610465578063eced372814610499578063ee683151146104bb578063f5fc8c82146104dd575b6101225b610000565b565b005b34610000576101346004356104ef565b60408051600160a060020a039092168252519081900360200190f35b346100005761015d610510565b60408051918252519081900360200190f35b3461000057610122600435600160a060020a0360243516604435610515565b005b346100005761015d6004356105b3565b60408051918252519081900360200190f35b3461000057610122600435600160a060020a03602435811690604435166064356105cb565b005b346100005761015d600435610672565b60408051918252519081900360200190f35b346100005760408051602060046024803582810135601f8101859004850286018501909652858552610122958335959394604494939290920191819084018382808284375094965061068795505050505050565b005b346100005761013460043561078c565b60408051600160a060020a039092168252519081900360200190f35b346100005761028d6004356107ad565b6040518082600481116100005760ff16815260200191505060405180910390f35b346100005761015d6004356107c8565b60408051918252519081900360200190f35b34610000576102e06004356107e0565b604080516020808252835181830152835191928392908301918501908083838215610326575b80518252602083111561032657601f199092019160209182019101610306565b505050905090810190601f1680156103525780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b610122600435600160a060020a036024351661088b565b005b3461000057610122600435610921565b005b346100005761015d600435610672565b60408051918252519081900360200190f35b3461000057610122600435600160a060020a036024358116906044351660643560ff6084351660a43560c43560e435610104356109bc565b005b3461000057610122600435600160a060020a0360243516604435610ad0565b005b346100005761015d600435600160a060020a0360243516610b6e565b60408051918252519081900360200190f35b346100005761015d600435610c0c565b60408051918252519081900360200190f35b610122600435610c24565b005b346100005761015d600435600160a060020a0360243581169060443516610caa565b60408051918252519081900360200190f35b346100005761015d600435610d51565b60408051918252519081900360200190f35b346100005761015d600435610d69565b60408051918252519081900360200190f35b3461000057610122600435610d81565b005b600081815260208190526040902060050154600160a060020a03165b919050565b601281565b60008381526020819052604080822081517f0319d4f9000000000000000000000000000000000000000000000000000000008152600481019190915260248101869052600160a060020a038516604482015260648101849052905173__RedeemableTokenLib____________________92630319d4f99260848082019391829003018186803b156100005760325a03f415610000575050505b505050565b6000818152602081905260409020600b01545b919050565b60008481526020819052604080822081517f71c2d91a000000000000000000000000000000000000000000000000000000008152600481019190915260248101879052600160a060020a0380871660448301528516606482015260848101849052905173__RedeemableTokenLib____________________926371c2d91a9260a48082019391829003018186803b156100005760325a03f415610000575050505b50505050565b6000818152602081905260409020545b919050565b6000828152602081815260409182902091517ff096360f0000000000000000000000000000000000000000000000000000000081526005909201600483018181526024840186905260606044850190815285516064860152855173__AttestationLib________________________9563f096360f958994899490939092608401918501908083838215610736575b80518252602083111561073657601f199092019160209182019101610716565b505050905090810190601f1680156107625780820380516001836020036101000a031916815260200191505b5094505050505060006040518083038186803b156100005760325a03f415610000575050505b5050565b600081815260208190526040902060080154600160a060020a03165b919050565b6000818152602081905260409020600a015460ff165b919050565b6000818152602081905260409020600701545b919050565b604080516020808201835260008083528481528082528390206006018054845160026000196001841615610100020190921691909104601f81018490048402820184019095528481529293909183018282801561087e5780601f106108535761010080835404028352916020019161087e565b820191906000526020600020905b81548152906001019060200180831161086157829003601f168201915b505050505090505b919050565b60008281526020819052604080822081517f2671fa4b000000000000000000000000000000000000000000000000000000008152600481019190915260248101859052600160a060020a0384166044820152905173__LoanLib_______________________________92632671fa4b9260648082019391829003018186803b156100005760325a03f415610000575050505b5050565b60008181526020819052604080822081517fd4ebaa18000000000000000000000000000000000000000000000000000000008152600481019190915260248101849052905173__RedeemableTokenLib____________________9263d4ebaa189260448082019391829003018186803b156100005760325a03f415610000575050505b50565b6000818152602081905260409020545b919050565b600089815260208190526040812060080154600160a060020a031611156109e257610000565b6000898152602081905260409020600881018054600160a060020a03808c1673ffffffffffffffffffffffffffffffffffffffff1992831617909255888355600583018054928b169290911691909117905560078101829055600a01805486919060ff19166001836004811161000057021790555060008981526020818152604091829020600b8101879055600d8101869055600c018490558151600160a060020a038b8116825242928201929092528251918a16928c927fa0755887a25eb0a7fadc1b4e3982db5663d49089fc2de7b2f2ab1f9168ad71c69281900390910190a35b505050505050505050565b60008381526020819052604080822081517f0848da6f000000000000000000000000000000000000000000000000000000008152600481019190915260248101869052600160a060020a038516604482015260648101849052905173__RedeemableTokenLib____________________92630848da6f9260848082019391829003018186803b156100005760325a03f415610000575050505b505050565b6000828152602081815260408083208151830184905281517f22f600390000000000000000000000000000000000000000000000000000000081526004810191909152600160a060020a0385166024820152905173__RedeemableTokenLib____________________926322f600399260448082019391829003018186803b156100005760325a03f415610000575050604051519150505b92915050565b6000818152602081905260409020600301545b919050565b60008181526020819052604080822081517f6c293625000000000000000000000000000000000000000000000000000000008152600481019190915260248101849052905173__LoanLib_______________________________92636c2936259260448082019391829003018186803b156100005760325a03f415610000575050505b50565b6000838152602081815260408083208151830184905281517f32c8e5810000000000000000000000000000000000000000000000000000000081526004810191909152600160a060020a03808716602483015285166044820152905173__RedeemableTokenLib____________________926332c8e5819260648082019391829003018186803b156100005760325a03f415610000575050604051519150505b9392505050565b6000818152602081905260409020600c01545b919050565b6000818152602081905260409020600d01545b919050565b60008181526020819052604080822081517fef918c150000000000000000000000000000000000000000000000000000000081526004810191909152905173__LoanLib_______________________________9263ef918c159260248082019391829003018186803b156100005760325a03f415610000575050505b505600a165627a7a723058200e30a227049a7bbd8253288fdae7c9983000c606aab55093c4f402c995e88bc40029",
   "networks": {
+    "3": {
+      "events": {
+        "0x406d6b56e7b0f2ea2d981907ff7082b8d06a927181752ebcc6c4a7853b06a892": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Attested",
+          "type": "event"
+        },
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0xb2e011f7561cad3d4f94ede484a09ba367934c0a295f35f67dda16d8b41329e9": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "InvestmentRedeemed",
+          "type": "event"
+        },
+        "0x18f98530aebbffbf8449f9c6ca4abcb65b320c17d19df6b2244eedc3349b8875": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0x8514357b17ccbde354811f827b94585a7ab01b4034aa86a807b7cc2c100b7be8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Investment",
+          "type": "event"
+        },
+        "0x1fffbc3377eb301e7883a5b22ed1facf63bfb931ab8ebca72c26cb81ae0fbc7e": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0xb8a00d6d8ca1be30bfec34d8f97e55f0f0fd9eeb7fb46e030516363d4cfe1ad6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "address"
+            }
+          ],
+          "name": "Log",
+          "type": "event"
+        },
+        "0xc1593f7fe24bab4c9ff53ae913ba56918cd3e91650b27338dde5cd1e932fc6d9": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "string"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanCreated",
+          "type": "event"
+        },
+        "0xf8ca259b4b82670be7501ff56ad1fc9c7cd199d3431e3c502f2c5f86884bc150": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0x71dc57be39b79a8b1f8e288bc0ad3f1bc02a354d540618df5cb7ed1c95b9c140": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0xe370869e47a25fc050e8ddbe8073aa69439655908a367771dfda83bcabf0a6cb": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "InvestmentRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xd7fe0183e01b521e9d0574ee3e33a2ed50a4534a16575f33d628e31b7e15833c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Investment",
+          "type": "event"
+        },
+        "0x5cfe4187e5fd95a5f8f8ab667b0c976706cda4034f5c6d561a76ed97e0448398": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "_borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0xa0755887a25eb0a7fadc1b4e3982db5663d49089fc2de7b2f2ab1f9168ad71c6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "_borrower",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "_attestor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanCreated",
+          "type": "event"
+        },
+        "0x61cae4201bb8c0117495b22a70f5202410666b349c27302dac280dc054b60f2a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_attestor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Attested",
+          "type": "event"
+        }
+      },
+      "links": {
+        "LoanLib": "0x0880269cbe00ce01427715fbf374c6bcfc300d3d",
+        "RedeemableTokenLib": "0x569f4fa5622de98d2ebb713a9b017b7930ec929a",
+        "AttestationLib": "0x94cf03d38eee666f4f60cc7b4ba6f00b2d5525f4"
+      },
+      "address": "0x29bede679f82cfe352795d375d0bfe51ffbb05f1",
+      "updated_at": 1497252066815
+    },
     "1493251596276": {
       "events": {},
       "links": {},
       "address": "0xc71d8bf396686e81855bba0468fda87cb8e96169",
       "updated_at": 1493252336192
+    },
+    "1496979496506": {
+      "events": {
+        "0x406d6b56e7b0f2ea2d981907ff7082b8d06a927181752ebcc6c4a7853b06a892": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Attested",
+          "type": "event"
+        },
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0xb2e011f7561cad3d4f94ede484a09ba367934c0a295f35f67dda16d8b41329e9": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "InvestmentRedeemed",
+          "type": "event"
+        },
+        "0x18f98530aebbffbf8449f9c6ca4abcb65b320c17d19df6b2244eedc3349b8875": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0x8514357b17ccbde354811f827b94585a7ab01b4034aa86a807b7cc2c100b7be8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Investment",
+          "type": "event"
+        },
+        "0x1fffbc3377eb301e7883a5b22ed1facf63bfb931ab8ebca72c26cb81ae0fbc7e": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        }
+      },
+      "links": {
+        "LoanLib": "0x24e254dd71db3f530575f07ae78db41c9c2cd2a8",
+        "RedeemableTokenLib": "0x1b5524cd8a302e52d7bdcdb91fb8aa6d9d0ace55"
+      },
+      "address": "0xc90ed3903d04a89480bec7963579820b6a6e5430",
+      "updated_at": 1496979883572
+    },
+    "1497940513168": {
+      "events": {
+        "0x61cae4201bb8c0117495b22a70f5202410666b349c27302dac280dc054b60f2a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_attestor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Attested",
+          "type": "event"
+        },
+        "0xf8ca259b4b82670be7501ff56ad1fc9c7cd199d3431e3c502f2c5f86884bc150": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0x71dc57be39b79a8b1f8e288bc0ad3f1bc02a354d540618df5cb7ed1c95b9c140": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0xe370869e47a25fc050e8ddbe8073aa69439655908a367771dfda83bcabf0a6cb": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "InvestmentRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xd7fe0183e01b521e9d0574ee3e33a2ed50a4534a16575f33d628e31b7e15833c": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "Investment",
+          "type": "event"
+        },
+        "0x5cfe4187e5fd95a5f8f8ab667b0c976706cda4034f5c6d561a76ed97e0448398": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "_borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0xa0755887a25eb0a7fadc1b4e3982db5663d49089fc2de7b2f2ab1f9168ad71c6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "_uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "_borrower",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "_attestor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanCreated",
+          "type": "event"
+        }
+      },
+      "links": {
+        "LoanLib": "0x682720742a989187c33439bccb0643fc43aae2e6",
+        "RedeemableTokenLib": "0xfc096fc4079fbc5b039f82ef87e9592fc478ebaf",
+        "AttestationLib": "0x6283eabc47129340f6856e74a9ed529606b6cb83"
+      },
+      "address": "0x183ed4aaf0495c223b52990043229269012d7020",
+      "updated_at": 1497947930577
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1496853922095
+  "updated_at": 1498004592493
 }

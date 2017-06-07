@@ -1,0 +1,64 @@
+{
+  "contract_name": "TimeLockLib",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "TimeLockLib.TimeLock storage"
+        }
+      ],
+      "name": "beforeTimeLock",
+      "outputs": [
+        {
+          "name": "beforeTimeLock",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "TimeLockLib.TimeLock storage"
+        }
+      ],
+      "name": "afterTimeLock",
+      "outputs": [
+        {
+          "name": "afterTimeLock",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000575b60a7806100186000396000f300606060405263ffffffff60e060020a6000350416633f9a3e608114602c578063dc59e908146049575b6000565b60356004356066565b604080519115158252519081900360200190f35b60356004356071565b604080519115158252519081900360200190f35b80544211155b919050565b805442115b9190505600a165627a7a7230582026b680d4f4265d7fb07d9a6f8f5d95332765c9a23d9b48e953a5746fbcc9e5840029",
+  "networks": {
+    "3": {
+      "events": {},
+      "links": {},
+      "address": "0xd1426beef7cee37492fc05aa0deb04f13f8e9591",
+      "updated_at": 1497252066811
+    },
+    "1496979496506": {
+      "events": {},
+      "links": {},
+      "address": "0x42eca1cce977bd27fd09820c55c220ae2703bb47",
+      "updated_at": 1496979883566
+    },
+    "1497940513168": {
+      "events": {},
+      "links": {},
+      "address": "0xd2ee52dac4e1f7b16c22085b86847cb7a1d061d6",
+      "updated_at": 1497947930569
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1498004592493
+}
