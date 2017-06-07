@@ -1,10 +1,7 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/SafeMath.sol";
-import "./Attestable.sol";
-import "./TimeLocked.sol";
-import "./RedeemableToken.sol";
-
+import "./LoanLib.sol";
+import "./ERC20.sol";
 
 /**
  * @title Loan
@@ -13,7 +10,10 @@ import "./RedeemableToken.sol";
  * @dev Heavily based on the CrowdsaleToken contract in the
  *        OpenZeppelin reference contracts.
  */
-contract Loan is RedeemableToken, Attestable, TimeLocked {
+contract Loan is RedeemableToken, TimeLocked, Attestable {
+  using LoanLib as LoanLib.Loan;
+  uint public constant decimals = 18;
+
   /**
    EVENTS
   */
@@ -21,7 +21,8 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
   event Investment(address indexed _from, uint _value, uint _timestamp);
   event LoanTermBegin(uint _timestamp);
 
-  address public borrower;
+
+  LoanLib.Loan public loan;
 
   /**
     LOAN TERMS
@@ -42,49 +43,21 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
       refers to the number of decimal points represented by interestRate
         (i.e. interestRate = % Interest * (10 ** decimals))
   */
-  enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
-  PeriodType public periodType;
-  uint public periodLength;
-  uint public termLength;
-  uint public principal;
-  uint public interestRate;
-  uint public constant decimals = 18;
-
-  uint public constant PRICE = 1; // 1 Ether = 1 Loan Token
-  uint public totalInvested;
-
-  /*
-      MODIFIERS
-    ========================================================================
-  */
-  modifier beforeLoanFunded() {
-    if (totalInvested >= principal)
-      throw;
-    _;
-  }
-
-  modifier afterLoanFunded() {
-    if (totalInvested < principal)
-      throw;
-    _;
-  }
-
-  function Loan(address _attestor,
+    function Loan(address _attestor,
                 uint _principal,
                 PeriodType _periodType,
                 uint _periodLength,
-                uint _interestRate,
+                uint _interest,
                 uint _termLength,
                 uint _fundingPeriodTimeLock)
             Attestable(_attestor)
             TimeLocked(_fundingPeriodTimeLock) {
-    borrower = msg.sender;
-    principal = _principal;
-    totalSupply = _principal;
-    periodType = _periodType;
-    periodLength = _periodLength;
-    interestRate = _interestRate;
-    termLength = _termLength;
+    loan.borrower = msg.sender;
+    loan.totalSupply = _principal;
+    loan.periodType = _periodType;
+    loan.periodLength = _periodLength;
+    loan.interest = _interest;
+    loan.termLength = _termLength;
   }
 
   /**
@@ -93,11 +66,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
    * sends the appropriate number of loan tokens to the sender.
    */
   function () payable {
-    if (loanFullyFunded()) {
-      throw;
-    } else {
-      fundLoan(msg.sender);
-    }
+    loan.fallback();
   }
 
   /**
@@ -108,29 +77,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
   function fundLoan(address tokenRecipient) payable afterAttestedTo {
-    if (msg.value == 0) {
-      throw;
-    }
-
-    uint remainingPrincipal = principal.sub(totalInvested);
-    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
-
-    totalInvested = totalInvested.add(currentInvestmentAmount);
-
-    balances[tokenRecipient] = balances[tokenRecipient].add(currentInvestmentAmount);
-    Investment(tokenRecipient, currentInvestmentAmount, block.timestamp);
-
-    if (loanFullyFunded()) {
-      if (!borrower.send(principal)) {
-        throw;
-      }
-      LoanTermBegin(block.timestamp);
-    }
-
-    if (msg.value - currentInvestmentAmount > 0) {
-      if(!msg.sender.send(msg.value - currentInvestmentAmount))
-        throw;
-    }
+    loan.fundLoan(tokenRecipient);
   }
 
   /**
@@ -140,16 +87,7 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
    *    emptied out, the contract self destructs.
    */
   function withdrawInvestment() afterTimeLock beforeLoanFunded {
-    uint investmentRefund = balanceOf(msg.sender);
-    balances[msg.sender] = 0;
-
-    totalInvested = totalInvested.sub(investmentRefund);
-
-    if (!msg.sender.send(investmentRefund))
-      throw;
-
-    if (totalInvested == 0)
-      selfdestruct(msg.sender);
+    loan.withdrawInvestment();
   }
 
   /**
@@ -157,39 +95,6 @@ contract Loan is RedeemableToken, Attestable, TimeLocked {
    *  at the end of each of payment period.
    */
   function periodicRepayment() payable afterLoanFunded {
-    if (msg.value == 0)
-      throw;
-
-    redeemableValue = redeemableValue.add(msg.value);
-
-    PeriodicRepayment(msg.sender, msg.value, block.timestamp);
-  }
-
-  /**
-   * @dev Overrides the isRedeemable abstract funciton in RedeemableToken
-   *   in order to specify that investors can only withdraw the returned
-   *    principal + interest once a loan has been fully funded and
-   *    the borrower is in the midst of their loan term.
-   * @return Whether investors should be allowed to redeem repayments yet.
-   */
-  function isRedeemable(address owner)
-              afterLoanFunded returns (bool redeemable) {
-    return (balanceOf(owner) > 0);
-  }
-
-  /**
-   * @dev Returns the price of each loan token (namely, 1 Ether = 1 Loan Token)
-   * @return The price per unit of token.
-   */
-  function getPrice() constant returns (uint result) {
-    return PRICE;
-  }
-
-  /**
-   * @dev Loan is considered fully funded when the desired principal is raised.
-   * @return bool: Whether the loan is fully funded.
-   */
-  function loanFullyFunded() returns (bool funded) {
-    return (totalInvested == principal);
+    loan.periodicRepayment();
   }
 }

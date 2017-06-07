@@ -1,19 +1,30 @@
 pragma solidity ^0.4.8;
 
+import "./zeppelin/token/StandardToken.sol";
+
 /**
- * @title Standard ERC20 token library
- *
- * @dev Implemantation of the basic standart token.
- * @dev https://github.com/ethereum/EIPs/issues/20
- * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
+ * @title RedeemableToken
+ * @dev The RedeemableToken inherits from OpenZeppelin's StandardToken
+ *    encapsulates the redemption logic behind any digital cash-flow
+ *    generating assets such as loans and bonds.
  */
-library StandardTokenLib {
+contract RedeemableTokenLib is StandardTokenLib {
   using SafeMath for uint;
 
   struct Accounting {
+    uint totalSupply;
     mapping(address => uint) balances;
     mapping (address => mapping (address => uint)) allowed;
+
+    // The current total amount of redeemable tokens that have to-date
+    // become available in the contract -- this includes tokens that
+    // have already been redeemed.
+    uint redeemableValue;
+    // Amount of tokens redeemed to date by each investor
+    mapping (address => uint) balanceRedeemed;
   }
+
+  event InvestmentRedeemed(address _to, uint _value, uint _timestamp);
 
   /**
    * @dev Fix for the ERC20 short address attack.
@@ -90,4 +101,25 @@ library StandardTokenLib {
     return self.allowed[_owner][_spender];
   }
 
+  /*
+    At any point in time in which token value is redeemable, the amount of
+   tokens an investor X is entitled to equals:
+      ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
+  */
+  function redeemValue() {
+    uint investorEntitledTo = balanceOf(msg.sender)
+                                .mul(self.redeemableValue)
+                                .div(self.totalSupply);
+
+    uint remainingBalance = investorEntitledTo - self.balanceRedeemed[msg.sender];
+
+    if (remainingBalance == 0)
+      throw;
+
+    self.balanceRedeemed[msg.sender] = self.balanceRedeemed[msg.sender].add(remainingBalance);
+    if (!msg.sender.send(remainingBalance))
+      throw;
+
+    InvestmentRedeemed(msg.sender, remainingBalance, block.timestamp);
+  }
 }

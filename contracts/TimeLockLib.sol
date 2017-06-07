@@ -9,22 +9,24 @@ pragma solidity ^0.4.8;
  *      an accepted margin error of 900 seconds, so timelocks should not be
  *      specified with an expectation of subhourly accuracy.
  */
-contract TimeLocked {
-   uint public timeLock;
+library TimeLockLib {
+   struct TimeLock {
+     uint timeLock;
+   }
 
    function TimeLocked(uint _timeLock) {
-     timeLock = _timeLock;
+     self.timeLock = _timeLock;
    }
 
    modifier beforeTimeLock() {
-     if (block.timestamp > timeLock) {
+     if (block.timestamp > self.timeLock) {
        throw;
      }
      _;
    }
 
    modifier afterTimeLock() {
-     if (block.timestamp <= timeLock) {
+     if (block.timestamp <= self.timeLock) {
        throw;
      }
      _;

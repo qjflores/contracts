@@ -1,0 +1,193 @@
+pragma solidity ^0.4.8;
+
+import "./AttestationLib.sol";
+import "./TimeLockLib.sol";
+import "./RedeemableToken.sol";
+
+
+/**
+ * @title Loan
+ *
+ * @dev Simple unsecured loan implementation with simple interest.
+ * @dev Heavily based on the CrowdsaleToken contract in the
+ *        OpenZeppelin reference contracts.
+ */
+library LoanLib {
+  using RedeemableToken for RedeemableToken.Accounting;
+  using AttestationLib for AttestationLib.Attestation;
+  using TimeLockLib for TimeLockLib.TimeLock;
+
+  enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
+
+  /**
+   EVENTS
+  */
+  event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
+  event Investment(address indexed _from, uint _value, uint _timestamp);
+  event LoanTermBegin(uint _timestamp);
+
+  /**
+    LOAN TERMS
+    ========================================================================
+    Period: refers to the time period between each repayment due
+      date
+    PeriodType: refers to the unit of time in which the period and term length
+      are denominated
+    periodLength: refers to the number of time units of PeriodType are in any
+      given payment period.
+        (i.e. period = periodLength * periodType)
+    termLength: refers to the number of time units of PeriodType that are in
+      the entire loan's term
+    Principal: refers to the amount of Wei requested by a borrower
+    interestRate: is the percentage interest owed on top principal repayments
+      at each payment period's due date (non-compounding)
+    decimals: since floats can't natively be represented in Solidity, decimals
+      refers to the number of decimal points represented by interestRate
+        (i.e. interestRate = % Interest * (10 ** decimals))
+  */
+
+  struct Loan {
+    RedeemableToken.Accounting token;
+    AttestationLib.Attestation attestation;
+    TimeLockLib.TimeLock timelock;
+    address borrower;
+    uint totalInvested;
+    PeriodType periodType;
+    uint periodLength;
+    uint termLength;
+    uint principal;
+    uint interest;
+  }
+
+
+  /*
+      MODIFIERS
+    ========================================================================
+  */
+  modifier beforeLoanFunded() {
+    if (self.totalInvested >= self.token.totalSupply)
+      throw;
+    _;
+  }
+
+  modifier afterLoanFunded() {
+    if (self.totalInvested < self.token.totalSupply)
+      throw;
+    _;
+  }
+
+  /*function Loan(address _attestor,
+                uint _principal,
+                PeriodType _periodType,
+                uint _periodLength,
+                uint _interest,
+                uint _termLength,
+                uint _fundingPeriodTimeLock)
+            Attestable(_attestor)
+            TimeLocked(_fundingPeriodTimeLock) {
+    self.borrower = msg.sender;
+    self.token.totalSupply = _principal;
+    self.periodType = _periodType;
+    self.periodLength = _periodLength;
+    self.interest = _interestRate;
+    self.termLength = _termLength;
+  }*/
+
+  /**
+   * @dev Fallback function which receives ether and, if the loan is fully funded,
+   * throws, and, if the loan is not fully funded,
+   * sends the appropriate number of loan tokens to the sender.
+   */
+  function fallback() {
+    if (loanFullyFunded()) {
+      throw;
+    } else {
+      fundLoan(msg.sender);
+    }
+  }
+
+  /**
+   * @dev Funds the loan request, refunds any remaining ether if the transaction
+   *    fully funds the loan, issues tokens representing ownership in the loan
+   *    to tokenRecipient, and transfers the principal to the borrower if the
+   *    loan is fully funded.
+   * @param tokenRecipient The address which will recieve the new loan tokens.
+   */
+  function fundLoan(address tokenRecipient) payable afterAttestedTo {
+    if (msg.value == 0) {
+      throw;
+    }
+
+    uint remainingPrincipal = self.token.totalSupply.sub(totalInvested);
+    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
+
+    self.totalInvested = self.totalInvested.add(currentInvestmentAmount);
+
+    self.token.balances[tokenRecipient] = self.token.balances[tokenRecipient].add(currentInvestmentAmount);
+    Investment(tokenRecipient, currentInvestmentAmount, block.timestamp);
+
+    if (loanFullyFunded()) {
+      if (!self.borrower.send(self.token.totalSupply)) {
+        throw;
+      }
+      LoanTermBegin(block.timestamp);
+    }
+
+    if (msg.value - currentInvestmentAmount > 0) {
+      if(!msg.sender.send(msg.value - currentInvestmentAmount))
+        throw;
+    }
+  }
+
+  /**
+   * @dev If the time lock period has lapsed and the loan is, as of yet,
+   *    not fully funded, withdrawInvestment allows investors to withdraw
+   *    their deposited ether from the contract.  If the contract is fully
+   *    emptied out, the contract self destructs.
+   */
+  function withdrawInvestment() afterTimeLock beforeLoanFunded {
+    uint investmentRefund = balanceOf(msg.sender);
+    self.token.balances[msg.sender] = 0;
+
+    self.totalInvested = self.totalInvested.sub(investmentRefund);
+
+    if (!msg.sender.send(investmentRefund))
+      throw;
+
+    if (self.totalInvested == 0)
+      selfdestruct(msg.sender);
+  }
+
+  /**
+   * @dev Method used by borrowers to make repayments to the loan contract
+   *  at the end of each of payment period.
+   */
+  function periodicRepayment() payable afterLoanFunded {
+    if (msg.value == 0)
+      throw;
+
+    self.token.redeemableValue = self.token.redeemableValue.add(msg.value);
+
+    PeriodicRepayment(msg.sender, msg.value, block.timestamp);
+  }
+
+  /**
+   * @dev Overrides the isRedeemable abstract funciton in RedeemableToken
+   *   in order to specify that investors can only withdraw the returned
+   *    principal + interest once a loan has been fully funded and
+   *    the borrower is in the midst of their loan term.
+   * @return Whether investors should be allowed to redeem repayments yet.
+   */
+  function isRedeemable(address owner)
+              afterLoanFunded returns (bool redeemable) {
+    return (balanceOf(owner) > 0);
+  }
+
+  /**
+   * @dev Loan is considered fully funded when the desired principal is raised.
+   * @return bool: Whether the loan is fully funded.
+   */
+  function loanFullyFunded() returns (bool funded) {
+    return (self.totalInvested == self.token.totalSupply);
+  }
+}
