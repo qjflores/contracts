@@ -1,0 +1,45 @@
+{
+  "contract_name": "TimeLockLib",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "TimeLockLib.TimeLock storage"
+        }
+      ],
+      "name": "beforeTimeLock",
+      "outputs": [
+        {
+          "name": "beforeTimeLock",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "TimeLockLib.TimeLock storage"
+        }
+      ],
+      "name": "afterTimeLock",
+      "outputs": [
+        {
+          "name": "afterTimeLock",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000575b60a7806100186000396000f300606060405263ffffffff60e060020a6000350416633f9a3e608114602c578063dc59e908146049575b6000565b60356004356066565b604080519115158252519081900360200190f35b60356004356071565b604080519115158252519081900360200190f35b80544211155b919050565b805442115b9190505600a165627a7a723058202097911a45edf0a55da0f123508528e65136e3a50f7c6c10fe0853502890f63e0029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1496824630512
+}

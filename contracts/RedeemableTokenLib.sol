@@ -1,6 +1,6 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/token/StandardToken.sol";
+import './SafeMath.sol';
 
 /**
  * @title RedeemableToken
@@ -8,8 +8,12 @@ import "./zeppelin/token/StandardToken.sol";
  *    encapsulates the redemption logic behind any digital cash-flow
  *    generating assets such as loans and bonds.
  */
-contract RedeemableTokenLib is StandardTokenLib {
+library RedeemableTokenLib {
   using SafeMath for uint;
+
+  event Transfer(address indexed from, address indexed to, uint value);
+  event Approval(address indexed owner, address indexed spender, uint value);
+  event InvestmentRedeemed(address _to, uint _value, uint _timestamp);
 
   struct Accounting {
     uint totalSupply;
@@ -23,8 +27,6 @@ contract RedeemableTokenLib is StandardTokenLib {
     // Amount of tokens redeemed to date by each investor
     mapping (address => uint) balanceRedeemed;
   }
-
-  event InvestmentRedeemed(address _to, uint _value, uint _timestamp);
 
   /**
    * @dev Fix for the ERC20 short address attack.
@@ -41,7 +43,7 @@ contract RedeemableTokenLib is StandardTokenLib {
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
-  function transfer(address _to, uint _value) onlyPayloadSize(2 * 32) {
+  function transfer(Accounting storage self, address _to, uint _value) onlyPayloadSize(2 * 32) {
     self.balances[msg.sender] = self.balances[msg.sender].sub(_value);
     self.balances[_to] = self.balances[_to].add(_value);
     Transfer(msg.sender, _to, _value);
@@ -52,7 +54,7 @@ contract RedeemableTokenLib is StandardTokenLib {
   * @param _owner The address to query the the balance of.
   * @return An uint representing the amount owned by the passed address.
   */
-  function balanceOf(address _owner) constant returns (uint balance) {
+  function balanceOf(Accounting storage self, address _owner) constant returns (uint balance) {
     return self.balances[_owner];
   }
 
@@ -62,7 +64,7 @@ contract RedeemableTokenLib is StandardTokenLib {
    * @param _to address The address which you want to transfer to
    * @param _value uint the amout of tokens to be transfered
    */
-  function transferFrom(address _from, address _to, uint _value) onlyPayloadSize(3 * 32) {
+  function transferFrom(Accounting storage self, address _from, address _to, uint _value) onlyPayloadSize(3 * 32) {
     var _allowance = self.allowed[_from][msg.sender];
 
     // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
@@ -79,7 +81,7 @@ contract RedeemableTokenLib is StandardTokenLib {
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
-  function approve(address _spender, uint _value) {
+  function approve(Accounting storage self, address _spender, uint _value) {
 
     // To change the approve amount you first have to reduce the addresses`
     //  allowance to zero by calling `approve(_spender, 0)` if it is not
@@ -97,7 +99,7 @@ contract RedeemableTokenLib is StandardTokenLib {
    * @param _spender address The address which will spend the funds.
    * @return A uint specifing the amount of tokens still avaible for the spender.
    */
-  function allowance(address _owner, address _spender) constant returns (uint remaining) {
+  function allowance(Accounting storage self, address _owner, address _spender) constant returns (uint remaining) {
     return self.allowed[_owner][_spender];
   }
 
@@ -106,10 +108,10 @@ contract RedeemableTokenLib is StandardTokenLib {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue() {
-    uint investorEntitledTo = balanceOf(msg.sender)
-                                .mul(self.redeemableValue)
-                                .div(self.totalSupply);
+  function redeemValue(Accounting storage self) {
+    uint investorEntitledTo = balanceOf(self, msg.sender)
+                                  .mul(self.redeemableValue)
+                                  .div(self.totalSupply);
 
     uint remainingBalance = investorEntitledTo - self.balanceRedeemed[msg.sender];
 

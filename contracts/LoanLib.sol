@@ -2,7 +2,7 @@ pragma solidity ^0.4.8;
 
 import "./AttestationLib.sol";
 import "./TimeLockLib.sol";
-import "./RedeemableToken.sol";
+import "./RedeemableTokenLib.sol";
 
 
 /**
@@ -13,9 +13,10 @@ import "./RedeemableToken.sol";
  *        OpenZeppelin reference contracts.
  */
 library LoanLib {
-  using RedeemableToken for RedeemableToken.Accounting;
+  using RedeemableTokenLib for RedeemableTokenLib.Accounting;
   using AttestationLib for AttestationLib.Attestation;
   using TimeLockLib for TimeLockLib.TimeLock;
+  using SafeMath for uint;
 
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
 
@@ -47,7 +48,7 @@ library LoanLib {
   */
 
   struct Loan {
-    RedeemableToken.Accounting token;
+    RedeemableTokenLib.Accounting token;
     AttestationLib.Attestation attestation;
     TimeLockLib.TimeLock timelock;
     address borrower;
@@ -55,7 +56,6 @@ library LoanLib {
     PeriodType periodType;
     uint periodLength;
     uint termLength;
-    uint principal;
     uint interest;
   }
 
@@ -64,16 +64,19 @@ library LoanLib {
       MODIFIERS
     ========================================================================
   */
-  modifier beforeLoanFunded() {
-    if (self.totalInvested >= self.token.totalSupply)
+  modifier assert(bool required) {
+    if (!required) {
       throw;
+    }
     _;
   }
 
-  modifier afterLoanFunded() {
-    if (self.totalInvested < self.token.totalSupply)
-      throw;
-    _;
+  function beforeLoanFunded(Loan storage self) returns (bool beforeLoanFunded) {
+    return (self.totalInvested < self.token.totalSupply);
+  }
+
+  function afterLoanFunded(Loan storage self) returns (bool afterLoanFunded) {
+    return (self.totalInvested == self.token.totalSupply);
   }
 
   /*function Loan(address _attestor,
@@ -98,11 +101,11 @@ library LoanLib {
    * throws, and, if the loan is not fully funded,
    * sends the appropriate number of loan tokens to the sender.
    */
-  function fallback() {
-    if (loanFullyFunded()) {
+  function fallback(Loan storage self) {
+    if (loanFullyFunded(self)) {
       throw;
     } else {
-      fundLoan(msg.sender);
+      fundLoan(self, msg.sender);
     }
   }
 
@@ -113,12 +116,13 @@ library LoanLib {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(address tokenRecipient) payable afterAttestedTo {
+  function fundLoan(Loan storage self, address tokenRecipient)
+        assert(self.attestation.afterAttestedTo()) {
     if (msg.value == 0) {
       throw;
     }
 
-    uint remainingPrincipal = self.token.totalSupply.sub(totalInvested);
+    uint remainingPrincipal = self.token.totalSupply.sub(self.totalInvested);
     uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
 
     self.totalInvested = self.totalInvested.add(currentInvestmentAmount);
@@ -126,7 +130,7 @@ library LoanLib {
     self.token.balances[tokenRecipient] = self.token.balances[tokenRecipient].add(currentInvestmentAmount);
     Investment(tokenRecipient, currentInvestmentAmount, block.timestamp);
 
-    if (loanFullyFunded()) {
+    if (loanFullyFunded(self)) {
       if (!self.borrower.send(self.token.totalSupply)) {
         throw;
       }
@@ -145,8 +149,10 @@ library LoanLib {
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment() afterTimeLock beforeLoanFunded {
-    uint investmentRefund = balanceOf(msg.sender);
+  function withdrawInvestment(Loan storage self)
+        assert(self.timelock.afterTimeLock())
+        assert(beforeLoanFunded(self)) {
+    uint investmentRefund = self.token.balanceOf(msg.sender);
     self.token.balances[msg.sender] = 0;
 
     self.totalInvested = self.totalInvested.sub(investmentRefund);
@@ -162,7 +168,8 @@ library LoanLib {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment() payable afterLoanFunded {
+  function periodicRepayment(Loan storage self)
+      assert(afterLoanFunded(self)) {
     if (msg.value == 0)
       throw;
 
@@ -178,16 +185,16 @@ library LoanLib {
    *    the borrower is in the midst of their loan term.
    * @return Whether investors should be allowed to redeem repayments yet.
    */
-  function isRedeemable(address owner)
-              afterLoanFunded returns (bool redeemable) {
-    return (balanceOf(owner) > 0);
+  function isRedeemable(Loan storage self, address owner)
+              assert(afterLoanFunded(self)) returns (bool redeemable) {
+    return (self.token.balanceOf(owner) > 0);
   }
 
   /**
    * @dev Loan is considered fully funded when the desired principal is raised.
    * @return bool: Whether the loan is fully funded.
    */
-  function loanFullyFunded() returns (bool funded) {
+  function loanFullyFunded(Loan storage self) returns (bool funded) {
     return (self.totalInvested == self.token.totalSupply);
   }
 }

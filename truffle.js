@@ -16,11 +16,14 @@ module.exports = {
      // destination_directory: directory where truffle expects the built assets (important for `truffle serve`)
 
      const solc_compile = "docker run -v " + options.working_directory + ":/DharmaLoanStandard \
-       ethereum/solc:stable -o /DharmaLoanStandard/dist --overwrite --bin --abi \
+       ethereum/solc:stable -o /DharmaLoanStandard/dist --overwrite --optimize --bin --abi \
        /DharmaLoanStandard/contracts/Loan.sol"
 
      exec(solc_compile, function(error, stdout, stderr) {
-      callback(error);
+       if (error) {
+         console.log(error)
+       }
+       callback(error);
      })
   }
 };

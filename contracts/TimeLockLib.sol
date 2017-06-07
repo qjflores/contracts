@@ -14,21 +14,18 @@ library TimeLockLib {
      uint timeLock;
    }
 
-   function TimeLocked(uint _timeLock) {
-     self.timeLock = _timeLock;
-   }
-
-   modifier beforeTimeLock() {
-     if (block.timestamp > self.timeLock) {
+   modifier req(bool required) {
+     if (!required) {
        throw;
      }
      _;
    }
 
-   modifier afterTimeLock() {
-     if (block.timestamp <= self.timeLock) {
-       throw;
-     }
-     _;
+   function beforeTimeLock(TimeLock storage self) returns (bool beforeTimeLock) {
+     return (block.timestamp <= self.timeLock);
+   }
+
+   function afterTimeLock(TimeLock storage self)  returns (bool afterTimeLock) {
+     return (block.timestamp > self.timeLock);
    }
 }

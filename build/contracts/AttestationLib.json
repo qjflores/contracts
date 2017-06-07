@@ -1,0 +1,109 @@
+{
+  "contract_name": "AttestationLib",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "AttestationLib.Attestation storage"
+        },
+        {
+          "name": "_attestationCommitment",
+          "type": "bytes"
+        }
+      ],
+      "name": "attest",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "AttestationLib.Attestation storage"
+        }
+      ],
+      "name": "beforeAttestedTo",
+      "outputs": [
+        {
+          "name": "beforeAttestedTo",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "AttestationLib.Attestation storage"
+        }
+      ],
+      "name": "fromAttestor",
+      "outputs": [
+        {
+          "name": "fromAttestor",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "AttestationLib.Attestation storage"
+        }
+      ],
+      "name": "afterAttestedTo",
+      "outputs": [
+        {
+          "name": "attestedTo",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "AttestationLib.Attestation storage"
+        },
+        {
+          "name": "_attestor",
+          "type": "address"
+        }
+      ],
+      "name": "setAttestor",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "Attested",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000575b6102c4806100196000396000f300606060405263ffffffff60e060020a6000350416638117cf9c8114610050578063886aaad0146100a1578063c5b4df55146100c0578063e43930be146100df578063eeaff5f5146100fe575b610000565b60408051602060046024803582810135601f810185900485028601850190965285855261009f958335959394604494939290920191819084018382808284375094965061011795505050505050565b005b6100ac60043561021b565b604080519115158252519081900360200190f35b6100ac600435610238565b604080519115158252519081900360200190f35b6100ac60043561024f565b604080519115158252519081900360200190f35b61009f600435600160a060020a036024351661026d565b005b61012082610238565b80151561012c57610000565b6101358361021b565b80151561014157610000565b82846001019080519060200190828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061018f57805160ff19168380011785556101bc565b828001600101855582156101bc579182015b828111156101bc5782518255916020019190600101906101a1565b5b506101dd9291505b808211156101d957600081556001016101c5565b5090565b50506040805142815290517f406d6b56e7b0f2ea2d981907ff7082b8d06a927181752ebcc6c4a7853b06a8929181900360200190a15b5b505b505050565b60018181015460029181161561010002600019011604155b919050565b805433600160a060020a039081169116145b919050565b6001818101546002918116156101000260001901160415155b919050565b815473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0382161782555b50505600a165627a7a72305820c9b07503a1f7e1a8505156c86299a7212aa5084895b6f040dcb5c0796da4fac10029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1496824630511
+}

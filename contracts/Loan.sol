@@ -1,7 +1,9 @@
 pragma solidity ^0.4.8;
 
 import "./LoanLib.sol";
-import "./ERC20.sol";
+import "./RedeemableTokenLib.sol";
+
+/*import "zeppelin-solidity/contracts/token/ERC20.sol";*/
 
 /**
  * @title Loan
@@ -10,8 +12,10 @@ import "./ERC20.sol";
  * @dev Heavily based on the CrowdsaleToken contract in the
  *        OpenZeppelin reference contracts.
  */
-contract Loan is RedeemableToken, TimeLocked, Attestable {
-  using LoanLib as LoanLib.Loan;
+contract Loan {
+  using LoanLib for LoanLib.Loan;
+  using RedeemableTokenLib for RedeemableTokenLib.Accounting;
+
   uint public constant decimals = 18;
 
   /**
@@ -22,7 +26,7 @@ contract Loan is RedeemableToken, TimeLocked, Attestable {
   event LoanTermBegin(uint _timestamp);
 
 
-  LoanLib.Loan public loan;
+  LoanLib.Loan loan;
 
   /**
     LOAN TERMS
@@ -45,15 +49,15 @@ contract Loan is RedeemableToken, TimeLocked, Attestable {
   */
     function Loan(address _attestor,
                 uint _principal,
-                PeriodType _periodType,
+                LoanLib.PeriodType _periodType,
                 uint _periodLength,
                 uint _interest,
                 uint _termLength,
-                uint _fundingPeriodTimeLock)
-            Attestable(_attestor)
-            TimeLocked(_fundingPeriodTimeLock) {
+                uint _fundingPeriodTimeLock) {
     loan.borrower = msg.sender;
-    loan.totalSupply = _principal;
+    loan.token.totalSupply = _principal;
+    loan.attestation.attestor = _attestor;
+    loan.timelock.timeLock = _fundingPeriodTimeLock;
     loan.periodType = _periodType;
     loan.periodLength = _periodLength;
     loan.interest = _interest;
@@ -76,7 +80,7 @@ contract Loan is RedeemableToken, TimeLocked, Attestable {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(address tokenRecipient) payable afterAttestedTo {
+  function fundLoan(address tokenRecipient) {
     loan.fundLoan(tokenRecipient);
   }
 
@@ -86,7 +90,7 @@ contract Loan is RedeemableToken, TimeLocked, Attestable {
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment() afterTimeLock beforeLoanFunded {
+  function withdrawInvestment() {
     loan.withdrawInvestment();
   }
 
@@ -94,7 +98,63 @@ contract Loan is RedeemableToken, TimeLocked, Attestable {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment() payable afterLoanFunded {
+  function periodicRepayment() {
     loan.periodicRepayment();
+  }
+
+  /**
+  * @dev transfer token for a specified address
+  * @param _to The address to transfer to.
+  * @param _value The amount to be transferred.
+  */
+  function transfer(address _to, uint _value) {
+    loan.token.transfer(_to, _value);
+  }
+
+  /**
+  * @dev Gets the balance of the specified address.
+  * @param _owner The address to query the the balance of.
+  * @return An uint representing the amount owned by the passed address.
+  */
+  function balanceOf(address _owner) constant returns (uint balance) {
+    return loan.token.balanceOf(_owner);
+  }
+
+  /**
+   * @dev Transfer tokens from one address to another
+   * @param _from address The address which you want to send tokens from
+   * @param _to address The address which you want to transfer to
+   * @param _value uint the amout of tokens to be transfered
+   */
+  function transferFrom(address _from, address _to, uint _value) {
+    loan.token.transferFrom(_from, _to, _value);
+  }
+
+  /**
+   * @dev Aprove the passed address to spend the specified amount of tokens on beahlf of msg.sender.
+   * @param _spender The address which will spend the funds.
+   * @param _value The amount of tokens to be spent.
+   */
+  function approve(address _spender, uint _value) {
+    loan.token.approve(_spender, _value);
+  }
+
+  /**
+   * @dev Function to check the amount of tokens than an owner allowed to a spender.
+   * @param _owner address The address which owns the funds.
+   * @param _spender address The address which will spend the funds.
+   * @return A uint specifing the amount of tokens still avaible for the spender.
+   */
+  function allowance(address _owner, address _spender) constant returns (uint remaining) {
+    return loan.token.allowance(_owner, _spender);
+  }
+
+  /*
+    At any point in time in which token value is redeemable, the amount of
+   tokens an investor X is entitled to equals:
+      ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
+  */
+  function redeemValue() {
+    loan.token.redeemValue();
   }
 }

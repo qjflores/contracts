@@ -2,7 +2,7 @@ pragma solidity ^0.4.8;
 
 
 /**
- * @title Attestable
+ * @title AttestationLib
  * @dev The Attestable contract encapsulates the logic behind a contract
  *    in which a third party attests to something, e.g. trustworthiness
  *    creditworthiness, identity, etc.
@@ -11,14 +11,20 @@ library AttestationLib {
   event Attested(uint256 _timestamp);
 
   struct Attestation {
-    address public attestor;
+    address attestor;
     // Attestations are represented as files pointed to by
     // IPFS multihashes -- i.e. /ipfs/<attestationCommitment>
-    bytes public attestationCommitment;
+    bytes attestationCommitment;
   }
 
-  function setAttestor(address _attestor) {
+  function setAttestor(Attestation storage self, address _attestor) {
     self.attestor = _attestor;
+  }
+
+  modifier req(bool required) {
+    if (!required)
+      throw;
+    _;
   }
 
   /*
@@ -27,7 +33,9 @@ library AttestationLib {
       containing the attestation, such that the file could be
       retrieved at /ipfs/<_attestationCommitment>
   */
-  function attest(bytes _attestationCommitment) onlyAttestor beforeAttestedTo {
+  function attest(Attestation storage self, bytes _attestationCommitment)
+                req(fromAttestor(self))
+                req(beforeAttestedTo(self)) {
     self.attestationCommitment = _attestationCommitment;
     Attested(block.timestamp);
   }
@@ -35,30 +43,21 @@ library AttestationLib {
   /**
    * @dev Throws if contract is not yet attested to.
    */
-   modifier afterAttestedTo() {
-     if (self.attestationCommitment.length == 0) {
-       throw;
-     }
-     _;
+   function afterAttestedTo(Attestation storage self) returns (bool attestedTo) {
+     return (self.attestationCommitment.length != 0);
    }
 
    /**
     * @dev Throws if contract is already attested to.
     */
-   modifier beforeAttestedTo() {
-     if (self.attestationCommitment.length > 0) {
-       throw;
-     }
-     _;
+   function beforeAttestedTo(Attestation storage self) returns (bool beforeAttestedTo) {
+     return (self.attestationCommitment.length == 0);
    }
 
    /**
     * @dev Throws if sender is not attestor
     */
-   modifier onlyAttestor() {
-     if (msg.sender != self.attestor) {
-       throw;
-     }
-     _;
+   function fromAttestor(Attestation storage self) returns (bool fromAttestor) {
+     return (msg.sender == self.attestor);
    }
 }
