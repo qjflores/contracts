@@ -1,3 +1,5 @@
+const uuidV4 = require('uuid/v4');
+
 var Web3 = require('web3');
 var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
@@ -54,6 +56,12 @@ PeriodType = {
   FixedDate: 3
 }
 
+function toHexString(byteArray) {
+  return byteArray.map(function(byte) {
+    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+  }).join('')
+}
+
 /*
   ACCOUNT 0: BORROWER
   ACCOUNT 1: ATTESTOR
@@ -72,33 +80,41 @@ const LOAN_TERMS = [web3.toWei(3, 'ether'), PeriodType.Monthly, 1,
 contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
+  uuid1 = '0x4d28914f53393c360dca4511c18a363997cae4c8';
   it("should deploy with the correct terms and RAA PK", function() {
-    return Loan.new(...[accounts[1]].concat(LOAN_TERMS)).then(function(instance) {
-      loan = instance;
-      return loan.principal.call();
-    }).then(function(principal) {
-      assert.equal(principal.toNumber(), LOAN_TERMS[0]);
-      return loan.periodType.call();
-    }).then(function(periodType) {
-      assert.equal(periodType, LOAN_TERMS[1]);
-      return loan.periodLength.call();
-    }).then(function(periodLength) {
-      assert.equal(periodLength, LOAN_TERMS[2]);
-      return loan.interestRate.call();
-    }).then(function(interestRate) {
-      assert.equal(interestRate, LOAN_TERMS[3]);
-      return loan.termLength.call();
-    }).then(function(termLength) {
-      assert.equal(termLength, LOAN_TERMS[4])
-      return loan.timeLock.call();
-    }).then(function(loanTimeLock) {
-      assert.equal(loanTimeLock, timeLockDate);
-      return loan.borrower.call();
-    }).then(function(borrower) {
-      assert.equal(borrower, accounts[0]);
-      return loan.attestor.call();
-    }).then(function(attestor) {
-      assert.equal(attestor, accounts[1]);
+    loan = null;
+    return Loan.deployed().then(function(instance) {
+      contract = instance;
+      return contract.createLoan(...[uuid1, accounts[1]].concat(LOAN_TERMS)).then(function(_) {
+        console.log(contract);
+        return contract.loans.call();
+      }).then(function(_loan) {
+        loan = _loan;
+        return loan.principal.call();
+      }).then(function(principal) {
+        assert.equal(principal.toNumber(), LOAN_TERMS[0]);
+        return loan.periodType.call();
+      }).then(function(periodType) {
+        assert.equal(periodType, LOAN_TERMS[1]);
+        return loan.periodLength.call();
+      }).then(function(periodLength) {
+        assert.equal(periodLength, LOAN_TERMS[2]);
+        return loan.interestRate.call();
+      }).then(function(interestRate) {
+        assert.equal(interestRate, LOAN_TERMS[3]);
+        return loan.termLength.call();
+      }).then(function(termLength) {
+        assert.equal(termLength, LOAN_TERMS[4])
+        return loan.timeLock.call();
+      }).then(function(loanTimeLock) {
+        assert.equal(loanTimeLock, timeLockDate);
+        return loan.borrower.call();
+      }).then(function(borrower) {
+        assert.equal(borrower, accounts[0]);
+        return loan.attestor.call();
+      }).then(function(attestor) {
+        assert.equal(attestor, accounts[1]);
+      })
     });
   });
 

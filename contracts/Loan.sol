@@ -26,7 +26,7 @@ contract Loan {
   event LoanTermBegin(uint _timestamp);
 
 
-  LoanLib.Loan loan;
+  mapping (address => LoanLib.Loan) loans;
 
   /**
     LOAN TERMS
@@ -47,30 +47,29 @@ contract Loan {
       refers to the number of decimal points represented by interestRate
         (i.e. interestRate = % Interest * (10 ** decimals))
   */
-    function Loan(address _attestor,
-                uint _principal,
-                LoanLib.PeriodType _periodType,
-                uint _periodLength,
-                uint _interest,
-                uint _termLength,
-                uint _fundingPeriodTimeLock) {
-    loan.borrower = msg.sender;
-    loan.token.totalSupply = _principal;
-    loan.attestation.attestor = _attestor;
-    loan.timelock.timeLock = _fundingPeriodTimeLock;
-    loan.periodType = _periodType;
-    loan.periodLength = _periodLength;
-    loan.interest = _interest;
-    loan.termLength = _termLength;
+    function createLoan(address uuid,
+                        address _attestor,
+                        uint _principal,
+                        LoanLib.PeriodType _periodType,
+                        uint _periodLength,
+                        uint _interest,
+                        uint _termLength,
+                        uint _fundingPeriodTimeLock) {
+    if (loans[uuid].borrower > 0)
+      throw;
+
+    loans[uuid].borrower = msg.sender;
+    loans[uuid].token.totalSupply = _principal;
+    loans[uuid].attestation.attestor = _attestor;
+    loans[uuid].timelock.timeLock = _fundingPeriodTimeLock;
+    loans[uuid].periodType = _periodType;
+    loans[uuid].periodLength = _periodLength;
+    loans[uuid].interest = _interest;
+    loans[uuid].termLength = _termLength;
   }
 
-  /**
-   * @dev Fallback function which receives ether and, if the loan is fully funded,
-   * throws, and, if the loan is not fully funded,
-   * sends the appropriate number of loan tokens to the sender.
-   */
   function () payable {
-    loan.fallback();
+    throw;
   }
 
   /**
@@ -80,8 +79,8 @@ contract Loan {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(address tokenRecipient) {
-    loan.fundLoan(tokenRecipient);
+  function fundLoan(address uuid, address tokenRecipient) {
+    loans[uuid].fundLoan(tokenRecipient);
   }
 
   /**
@@ -90,16 +89,16 @@ contract Loan {
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment() {
-    loan.withdrawInvestment();
+  function withdrawInvestment(address uuid) {
+    loans[uuid].withdrawInvestment();
   }
 
   /**
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment() {
-    loan.periodicRepayment();
+  function periodicRepayment(address uuid) {
+    loans[uuid].periodicRepayment();
   }
 
   /**
@@ -107,8 +106,8 @@ contract Loan {
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
-  function transfer(address _to, uint _value) {
-    loan.token.transfer(_to, _value);
+  function transfer(address uuid, address _to, uint _value) {
+    loans[uuid].token.transfer(_to, _value);
   }
 
   /**
@@ -116,8 +115,8 @@ contract Loan {
   * @param _owner The address to query the the balance of.
   * @return An uint representing the amount owned by the passed address.
   */
-  function balanceOf(address _owner) constant returns (uint balance) {
-    return loan.token.balanceOf(_owner);
+  function balanceOf(address uuid, address _owner) constant returns (uint balance) {
+    return loans[uuid].token.balanceOf(_owner);
   }
 
   /**
@@ -126,8 +125,8 @@ contract Loan {
    * @param _to address The address which you want to transfer to
    * @param _value uint the amout of tokens to be transfered
    */
-  function transferFrom(address _from, address _to, uint _value) {
-    loan.token.transferFrom(_from, _to, _value);
+  function transferFrom(address uuid, address _from, address _to, uint _value) {
+    loans[uuid].token.transferFrom(_from, _to, _value);
   }
 
   /**
@@ -135,8 +134,8 @@ contract Loan {
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
-  function approve(address _spender, uint _value) {
-    loan.token.approve(_spender, _value);
+  function approve(address uuid, address _spender, uint _value) {
+    loans[uuid].token.approve(_spender, _value);
   }
 
   /**
@@ -145,8 +144,8 @@ contract Loan {
    * @param _spender address The address which will spend the funds.
    * @return A uint specifing the amount of tokens still avaible for the spender.
    */
-  function allowance(address _owner, address _spender) constant returns (uint remaining) {
-    return loan.token.allowance(_owner, _spender);
+  function allowance(address uuid, address _owner, address _spender) constant returns (uint remaining) {
+    return loans[uuid].token.allowance(_owner, _spender);
   }
 
   /*
@@ -154,7 +153,7 @@ contract Loan {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue() {
-    loan.token.redeemValue();
+  function redeemValue(address uuid) {
+    loans[uuid].token.redeemValue();
   }
 }
