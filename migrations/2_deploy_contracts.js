@@ -20,6 +20,8 @@ module.exports = function(deployer, network, accounts) {
 
   deployer.link(LoanLib, Loan);
   deployer.link(RedeemableTokenLib, Loan);
+  deployer.link(AttestationLib, Loan);
+  deployer.link(TimeLockLib, Loan);
 
   deployer.deploy(Loan);
 };

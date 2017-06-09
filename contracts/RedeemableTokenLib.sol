@@ -17,6 +17,7 @@ library RedeemableTokenLib {
 
   struct Accounting {
     uint totalSupply;
+
     mapping(address => uint) balances;
     mapping (address => mapping (address => uint)) allowed;
 

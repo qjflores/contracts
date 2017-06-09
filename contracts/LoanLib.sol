@@ -26,6 +26,8 @@ library LoanLib {
   event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
   event Investment(address indexed _from, uint _value, uint _timestamp);
   event LoanTermBegin(uint _timestamp);
+  event Log(address _timestamp);
+
 
   /**
     LOAN TERMS
@@ -123,8 +125,8 @@ library LoanLib {
     }
 
     uint remainingPrincipal = self.token.totalSupply.sub(self.totalInvested);
-    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
 
+    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
     self.totalInvested = self.totalInvested.add(currentInvestmentAmount);
 
     self.token.balances[tokenRecipient] = self.token.balances[tokenRecipient].add(currentInvestmentAmount);
@@ -137,8 +139,8 @@ library LoanLib {
       LoanTermBegin(block.timestamp);
     }
 
-    if (msg.value - currentInvestmentAmount > 0) {
-      if(!msg.sender.send(msg.value - currentInvestmentAmount))
+    if (msg.value.sub(currentInvestmentAmount) > 0) {
+      if(!msg.sender.send(msg.value.sub(currentInvestmentAmount)))
         throw;
     }
   }
@@ -156,12 +158,11 @@ library LoanLib {
     self.token.balances[msg.sender] = 0;
 
     self.totalInvested = self.totalInvested.sub(investmentRefund);
-
     if (!msg.sender.send(investmentRefund))
       throw;
 
     if (self.totalInvested == 0)
-      selfdestruct(msg.sender);
+      self.borrower = 0;
   }
 
   /**
@@ -195,6 +196,6 @@ library LoanLib {
    * @return bool: Whether the loan is fully funded.
    */
   function loanFullyFunded(Loan storage self) returns (bool funded) {
-    return (self.totalInvested == self.token.totalSupply);
+    return (self.totalInvested >= self.token.totalSupply);
   }
 }
