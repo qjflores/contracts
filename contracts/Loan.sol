@@ -30,6 +30,7 @@ contract Loan {
   event Transfer(bytes32 indexed _uuid, address from, address indexed to, uint value);
   event Approval(bytes32 indexed _uuid, address indexed owner, address spender, uint value);
   event InvestmentRedeemed(bytes32 indexed _uuid, address indexed _to, uint _value, uint _timestamp);
+  event Attested(bytes32 indexed _uuid, address indexed _attestor, uint256 _timestamp);
 
   mapping (bytes32 => LoanLib.Loan) loans;
 
@@ -209,6 +210,6 @@ contract Loan {
   }
 
   function attest(bytes32 uuid, bytes attestationCommitment) {
-    loans[uuid].attestation.attest(attestationCommitment);
+    loans[uuid].attestation.attest(uuid, attestationCommitment);
   }
 }

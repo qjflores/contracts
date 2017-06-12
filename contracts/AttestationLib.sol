@@ -8,7 +8,7 @@ pragma solidity ^0.4.8;
  *    creditworthiness, identity, etc.
  */
 library AttestationLib {
-  event Attested(uint256 _timestamp);
+  event Attested(bytes32 indexed _uuid, address indexed _attestor, uint256 _timestamp);
 
   struct Attestation {
     address attestor;
@@ -33,11 +33,11 @@ library AttestationLib {
       containing the attestation, such that the file could be
       retrieved at /ipfs/<_attestationCommitment>
   */
-  function attest(Attestation storage self, bytes _attestationCommitment)
+  function attest(Attestation storage self, bytes32 uuid, bytes _attestationCommitment)
                 req(fromAttestor(self))
                 req(beforeAttestedTo(self)) {
     self.attestationCommitment = _attestationCommitment;
-    Attested(block.timestamp);
+    Attested(uuid, self.attestor, block.timestamp);
   }
 
   /**
