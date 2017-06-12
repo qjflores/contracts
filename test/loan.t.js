@@ -81,6 +81,7 @@ contract('Loan', function(_accounts) {
   accounts = _accounts;
   loan = null;
   uuid1 = web3.sha3(uuidV4());
+  console.log(uuid1);
   it("should deploy with the correct terms and RAA PK", function() {
     loan = null;
     return Loan.deployed().then(function(instance) {
