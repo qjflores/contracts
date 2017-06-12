@@ -23,12 +23,15 @@ contract Loan {
   /**
    EVENTS
   */
-  event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
-  event Investment(address indexed _from, uint _value, uint _timestamp);
-  event LoanTermBegin(uint _timestamp);
+  event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
+  event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
+  event LoanTermBegin(bytes32 indexed _uuid, address _borrower, uint _timestamp);
+  event LoanCreated(bytes32 indexed _uuid, address _borrower, address indexed _attestor, uint _timestamp);
+  event Transfer(bytes32 indexed _uuid, address from, address indexed to, uint value);
+  event Approval(bytes32 indexed _uuid, address indexed owner, address spender, uint value);
+  event InvestmentRedeemed(bytes32 indexed _uuid, address indexed _to, uint _value, uint _timestamp);
 
-
-  mapping (string => LoanLib.Loan) loans;
+  mapping (bytes32 => LoanLib.Loan) loans;
 
   /**
     LOAN TERMS
@@ -49,7 +52,7 @@ contract Loan {
       refers to the number of decimal points represented by interestRate
         (i.e. interestRate = % Interest * (10 ** decimals))
   */
-    function createLoan(string uuid,
+    function createLoan(bytes32 uuid,
                         address _borrower,
                         address _attestor,
                         uint _principal,
@@ -69,42 +72,42 @@ contract Loan {
     loans[uuid].periodLength = _periodLength;
     loans[uuid].interest = _interest;
     loans[uuid].termLength = _termLength;
-
+    LoanCreated(uuid, _borrower, _attestor, block.timestamp);
   }
 
-  function getBorrower(string uuid) returns (address asdf) {
+  function getBorrower(bytes32 uuid) returns (address asdf) {
     return loans[uuid].borrower;
   }
 
-  function getAttestor(string uuid) returns (address) {
+  function getAttestor(bytes32 uuid) returns (address) {
     return loans[uuid].attestation.attestor;
   }
 
-  function getAttestation(string uuid) returns (bytes) {
+  function getAttestation(bytes32 uuid) returns (bytes) {
     return loans[uuid].attestation.attestationCommitment;
   }
 
-  function getPrincipal(string uuid) returns (uint) {
+  function getPrincipal(bytes32 uuid) returns (uint) {
     return loans[uuid].token.totalSupply;
   }
 
-  function getPeriodType(string uuid) returns (LoanLib.PeriodType) {
+  function getPeriodType(bytes32 uuid) returns (LoanLib.PeriodType) {
     return loans[uuid].periodType;
   }
 
-  function getPeriodLength(string uuid) returns (uint) {
+  function getPeriodLength(bytes32 uuid) returns (uint) {
     return loans[uuid].periodLength;
   }
 
-  function getInterest(string uuid) returns (uint) {
+  function getInterest(bytes32 uuid) returns (uint) {
     return loans[uuid].interest;
   }
 
-  function getTermLength(string uuid) returns (uint) {
+  function getTermLength(bytes32 uuid) returns (uint) {
     return loans[uuid].termLength;
   }
 
-  function getTimelock(string uuid) returns (uint) {
+  function getTimelock(bytes32 uuid) returns (uint) {
     return loans[uuid].timelock.timeLock;
   }
 
@@ -119,8 +122,8 @@ contract Loan {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(string uuid, address tokenRecipient) payable {
-    loans[uuid].fundLoan(tokenRecipient);
+  function fundLoan(bytes32 uuid, address tokenRecipient) payable {
+    loans[uuid].fundLoan(uuid, tokenRecipient);
   }
 
   /**
@@ -129,7 +132,7 @@ contract Loan {
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment(string uuid) {
+  function withdrawInvestment(bytes32 uuid) {
     loans[uuid].withdrawInvestment();
   }
 
@@ -137,8 +140,8 @@ contract Loan {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment(string uuid) payable {
-    loans[uuid].periodicRepayment();
+  function periodicRepayment(bytes32 uuid) payable {
+    loans[uuid].periodicRepayment(uuid);
   }
 
   /**
@@ -146,8 +149,8 @@ contract Loan {
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
-  function transfer(string uuid, address _to, uint _value) {
-    loans[uuid].token.transfer(_to, _value);
+  function transfer(bytes32 uuid, address _to, uint _value) {
+    loans[uuid].token.transfer(uuid, _to, _value);
   }
 
   /**
@@ -155,7 +158,7 @@ contract Loan {
   * @param _owner The address to query the the balance of.
   * @return An uint representing the amount owned by the passed address.
   */
-  function balanceOf(string uuid, address _owner) constant returns (uint balance) {
+  function balanceOf(bytes32 uuid, address _owner) constant returns (uint balance) {
     return loans[uuid].token.balanceOf(_owner);
   }
 
@@ -165,8 +168,8 @@ contract Loan {
    * @param _to address The address which you want to transfer to
    * @param _value uint the amout of tokens to be transfered
    */
-  function transferFrom(string uuid, address _from, address _to, uint _value) {
-    loans[uuid].token.transferFrom(_from, _to, _value);
+  function transferFrom(bytes32 uuid, address _from, address _to, uint _value) {
+    loans[uuid].token.transferFrom(uuid, _from, _to, _value);
   }
 
   /**
@@ -174,8 +177,8 @@ contract Loan {
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
-  function approve(string uuid, address _spender, uint _value) {
-    loans[uuid].token.approve(_spender, _value);
+  function approve(bytes32 uuid, address _spender, uint _value) {
+    loans[uuid].token.approve(uuid, _spender, _value);
   }
 
   /**
@@ -184,11 +187,11 @@ contract Loan {
    * @param _spender address The address which will spend the funds.
    * @return A uint specifing the amount of tokens still avaible for the spender.
    */
-  function allowance(string uuid, address _owner, address _spender) constant returns (uint remaining) {
+  function allowance(bytes32 uuid, address _owner, address _spender) constant returns (uint remaining) {
     return loans[uuid].token.allowance(_owner, _spender);
   }
 
-  function totalSupply(string uuid) returns (uint) {
+  function totalSupply(bytes32 uuid) returns (uint) {
     return loans[uuid].token.totalSupply;
   }
 
@@ -197,15 +200,15 @@ contract Loan {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue(string uuid) {
-    loans[uuid].token.redeemValue();
+  function redeemValue(bytes32 uuid) {
+    loans[uuid].token.redeemValue(uuid);
   }
 
-  function getRedeemableValue(string uuid) returns (uint) {
+  function getRedeemableValue(bytes32 uuid) returns (uint) {
     return loans[uuid].token.redeemableValue;
   }
 
-  function attest(string uuid, bytes attestationCommitment) {
+  function attest(bytes32 uuid, bytes attestationCommitment) {
     loans[uuid].attestation.attest(attestationCommitment);
   }
 }

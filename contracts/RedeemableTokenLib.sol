@@ -11,9 +11,9 @@ import './SafeMath.sol';
 library RedeemableTokenLib {
   using SafeMath for uint;
 
-  event Transfer(address indexed from, address indexed to, uint value);
-  event Approval(address indexed owner, address indexed spender, uint value);
-  event InvestmentRedeemed(address _to, uint _value, uint _timestamp);
+  event Transfer(bytes32 indexed uuid, address from, address indexed to, uint value);
+  event Approval(bytes32 indexed uuid, address indexed owner, address spender, uint value);
+  event InvestmentRedeemed(bytes32 indexed uuid, address indexed _to, uint _value, uint _timestamp);
 
   struct Accounting {
     uint totalSupply;
@@ -44,10 +44,10 @@ library RedeemableTokenLib {
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
-  function transfer(Accounting storage self, address _to, uint _value) onlyPayloadSize(2 * 32) {
+  function transfer(Accounting storage self, bytes32 uuid, address _to, uint _value) onlyPayloadSize(2 * 32) {
     self.balances[msg.sender] = self.balances[msg.sender].sub(_value);
     self.balances[_to] = self.balances[_to].add(_value);
-    Transfer(msg.sender, _to, _value);
+    Transfer(uuid, msg.sender, _to, _value);
   }
 
   /**
@@ -65,7 +65,7 @@ library RedeemableTokenLib {
    * @param _to address The address which you want to transfer to
    * @param _value uint the amout of tokens to be transfered
    */
-  function transferFrom(Accounting storage self, address _from, address _to, uint _value) onlyPayloadSize(3 * 32) {
+  function transferFrom(Accounting storage self, bytes32 uuid, address _from, address _to, uint _value) onlyPayloadSize(3 * 32) {
     var _allowance = self.allowed[_from][msg.sender];
 
     // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
@@ -74,7 +74,7 @@ library RedeemableTokenLib {
     self.balances[_to] = self.balances[_to].add(_value);
     self.balances[_from] = self.balances[_from].sub(_value);
     self.allowed[_from][msg.sender] = _allowance.sub(_value);
-    Transfer(_from, _to, _value);
+    Transfer(uuid, _from, _to, _value);
   }
 
   /**
@@ -82,7 +82,7 @@ library RedeemableTokenLib {
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
-  function approve(Accounting storage self, address _spender, uint _value) {
+  function approve(Accounting storage self, bytes32 uuid, address _spender, uint _value) {
 
     // To change the approve amount you first have to reduce the addresses`
     //  allowance to zero by calling `approve(_spender, 0)` if it is not
@@ -91,7 +91,7 @@ library RedeemableTokenLib {
     if ((_value != 0) && (self.allowed[msg.sender][_spender] != 0)) throw;
 
     self.allowed[msg.sender][_spender] = _value;
-    Approval(msg.sender, _spender, _value);
+    Approval(uuid, msg.sender, _spender, _value);
   }
 
   /**
@@ -109,7 +109,7 @@ library RedeemableTokenLib {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue(Accounting storage self) {
+  function redeemValue(Accounting storage self, bytes32 uuid) {
     uint investorEntitledTo = balanceOf(self, msg.sender)
                                   .mul(self.redeemableValue)
                                   .div(self.totalSupply);
@@ -123,6 +123,6 @@ library RedeemableTokenLib {
     if (!msg.sender.send(remainingBalance))
       throw;
 
-    InvestmentRedeemed(msg.sender, remainingBalance, block.timestamp);
+    InvestmentRedeemed(uuid, msg.sender, remainingBalance, block.timestamp);
   }
 }

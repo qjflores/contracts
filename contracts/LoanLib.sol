@@ -23,10 +23,9 @@ library LoanLib {
   /**
    EVENTS
   */
-  event PeriodicRepayment(address indexed _from, uint _value, uint _timestamp);
-  event Investment(address indexed _from, uint _value, uint _timestamp);
-  event LoanTermBegin(uint _timestamp);
-  event Log(address _timestamp);
+  event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
+  event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
+  event LoanTermBegin(bytes32 indexed _uuid, address indexed _borrower, uint _timestamp);
 
 
   /**
@@ -81,36 +80,6 @@ library LoanLib {
     return (self.totalInvested == self.token.totalSupply);
   }
 
-  /*function Loan(address _attestor,
-                uint _principal,
-                PeriodType _periodType,
-                uint _periodLength,
-                uint _interest,
-                uint _termLength,
-                uint _fundingPeriodTimeLock)
-            Attestable(_attestor)
-            TimeLocked(_fundingPeriodTimeLock) {
-    self.borrower = msg.sender;
-    self.token.totalSupply = _principal;
-    self.periodType = _periodType;
-    self.periodLength = _periodLength;
-    self.interest = _interestRate;
-    self.termLength = _termLength;
-  }*/
-
-  /**
-   * @dev Fallback function which receives ether and, if the loan is fully funded,
-   * throws, and, if the loan is not fully funded,
-   * sends the appropriate number of loan tokens to the sender.
-   */
-  function fallback(Loan storage self) {
-    if (loanFullyFunded(self)) {
-      throw;
-    } else {
-      fundLoan(self, msg.sender);
-    }
-  }
-
   /**
    * @dev Funds the loan request, refunds any remaining ether if the transaction
    *    fully funds the loan, issues tokens representing ownership in the loan
@@ -118,7 +87,7 @@ library LoanLib {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(Loan storage self, address tokenRecipient)
+  function fundLoan(Loan storage self, bytes32 uuid, address tokenRecipient)
         assert(self.attestation.afterAttestedTo()) {
     if (msg.value == 0) {
       throw;
@@ -130,13 +99,13 @@ library LoanLib {
     self.totalInvested = self.totalInvested.add(currentInvestmentAmount);
 
     self.token.balances[tokenRecipient] = self.token.balances[tokenRecipient].add(currentInvestmentAmount);
-    Investment(tokenRecipient, currentInvestmentAmount, block.timestamp);
+    Investment(uuid, tokenRecipient, currentInvestmentAmount, block.timestamp);
 
     if (loanFullyFunded(self)) {
       if (!self.borrower.send(self.token.totalSupply)) {
         throw;
       }
-      LoanTermBegin(block.timestamp);
+      LoanTermBegin(uuid, self.borrower, block.timestamp);
     }
 
     if (msg.value.sub(currentInvestmentAmount) > 0) {
@@ -169,14 +138,14 @@ library LoanLib {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment(Loan storage self)
+  function periodicRepayment(Loan storage self, bytes32 uuid)
       assert(afterLoanFunded(self)) {
     if (msg.value == 0)
       throw;
 
     self.token.redeemableValue = self.token.redeemableValue.add(msg.value);
 
-    PeriodicRepayment(msg.sender, msg.value, block.timestamp);
+    PeriodicRepayment(uuid, msg.sender, msg.value, block.timestamp);
   }
 
   /**
