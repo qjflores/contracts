@@ -66,7 +66,7 @@ contract Loan {
 
     loans[uuid].borrower = _borrower;
     loans[uuid].token.totalSupply = _principal;
-    loans[uuid].attestation.attestor = _attestor;
+    loans[uuid].attestation.setAttestor(_attestor);
     loans[uuid].timelock.timeLock = _fundingPeriodTimeLock;
     loans[uuid].periodType = _periodType;
     loans[uuid].periodLength = _periodLength;
@@ -109,6 +109,10 @@ contract Loan {
 
   function getTimelock(bytes32 uuid) returns (uint) {
     return loans[uuid].timelock.timeLock;
+  }
+
+  function getTotalInvested(bytes32 uuid) returns (uint) {
+    return loans[uuid].totalInvested;
   }
 
   function () payable {
@@ -200,8 +204,8 @@ contract Loan {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue(bytes32 uuid) {
-    loans[uuid].token.redeemValue(uuid);
+  function redeemValue(bytes32 uuid, address recipient) {
+    loans[uuid].token.redeemValue(uuid, recipient);
   }
 
   function getRedeemableValue(bytes32 uuid) returns (uint) {

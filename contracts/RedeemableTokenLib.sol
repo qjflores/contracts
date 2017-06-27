@@ -13,7 +13,8 @@ library RedeemableTokenLib {
 
   event Transfer(bytes32 indexed uuid, address from, address indexed to, uint value);
   event Approval(bytes32 indexed uuid, address indexed owner, address spender, uint value);
-  event InvestmentRedeemed(bytes32 indexed uuid, address indexed _to, uint _value, uint _timestamp);
+  event InvestmentRedeemed(bytes32 indexed uuid,
+      address indexed _investor, address indexed _recipient, uint _value, uint _timestamp);
 
   struct Accounting {
     uint totalSupply;
@@ -109,7 +110,7 @@ library RedeemableTokenLib {
    tokens an investor X is entitled to equals:
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
-  function redeemValue(Accounting storage self, bytes32 uuid) {
+  function redeemValue(Accounting storage self, bytes32 uuid, address recipient) {
     uint investorEntitledTo = balanceOf(self, msg.sender)
                                   .mul(self.redeemableValue)
                                   .div(self.totalSupply);
@@ -120,9 +121,9 @@ library RedeemableTokenLib {
       throw;
 
     self.balanceRedeemed[msg.sender] = self.balanceRedeemed[msg.sender].add(remainingBalance);
-    if (!msg.sender.send(remainingBalance))
+    if (!recipient.send(remainingBalance))
       throw;
 
-    InvestmentRedeemed(uuid, msg.sender, remainingBalance, block.timestamp);
+    InvestmentRedeemed(uuid, msg.sender, recipient, remainingBalance, block.timestamp);
   }
 }
