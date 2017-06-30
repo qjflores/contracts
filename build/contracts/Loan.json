@@ -1667,14 +1667,14 @@
         }
       },
       "links": {
-        "LoanLib": "0x65ea35966b7c55c71df2ddd3df7a6ba747858c9e",
-        "RedeemableTokenLib": "0xff26f3cf823920e4890c7d4d7f87c59ef773c96e",
-        "AttestationLib": "0x9d91386a9aacecd75ca3128f416eb67ee24ba05f"
+        "LoanLib": "0x3686f4bea3c8036a1a81598d1ba2cbb6a3d1726a",
+        "RedeemableTokenLib": "0xdc052c62a187f5ba21e2e531d1c2f97561948d0f",
+        "AttestationLib": "0x6b2f3937f4350188d27b50a24b40d9adb980a3c0"
       },
-      "address": "0xf2db1a7c1f657fa305ddbef1a123554b3a630d9a",
-      "updated_at": 1498777686085
+      "address": "0xa8ec1fca6034cfcc90d72d68a79f1950ef766b49",
+      "updated_at": 1498808443134
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1498796856016
+  "updated_at": 1498808443134
 }

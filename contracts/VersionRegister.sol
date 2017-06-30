@@ -11,7 +11,8 @@ pragma solidity ^0.4.8;
 
 contract VersionRegister {
   mapping (bytes32 => address) versionMapping;
-  address owner;
+  bytes32 public currentVersion;
+  address public owner;
 
   modifier onlyOwner() {
     if (msg.sender != owner)
@@ -25,6 +26,10 @@ contract VersionRegister {
 
   function getContractByVersion(bytes32 versionHash) returns (address) {
     return versionMapping[versionHash];
+  }
+
+  function updateCurrentVersion(bytes32 versionHash) onlyOwner {
+    currentVersion = versionHash;
   }
 
   function updateVersionMapping(bytes32 versionHash, address contractAddress)

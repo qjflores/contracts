@@ -1076,14 +1076,14 @@
         }
       },
       "links": {
-        "TimeLockLib": "0xb2d4d1324c1cc593a71eedbefcbaaed56ec91514",
-        "AttestationLib": "0x9d91386a9aacecd75ca3128f416eb67ee24ba05f",
-        "RedeemableTokenLib": "0xff26f3cf823920e4890c7d4d7f87c59ef773c96e"
+        "TimeLockLib": "0x95ff6992b126617367d84c35725c8cdf8f1d8b29",
+        "AttestationLib": "0x6b2f3937f4350188d27b50a24b40d9adb980a3c0",
+        "RedeemableTokenLib": "0xdc052c62a187f5ba21e2e531d1c2f97561948d0f"
       },
-      "address": "0x65ea35966b7c55c71df2ddd3df7a6ba747858c9e",
-      "updated_at": 1498777686084
+      "address": "0x3686f4bea3c8036a1a81598d1ba2cbb6a3d1726a",
+      "updated_at": 1498808443133
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1498796856015
+  "updated_at": 1498808443133
 }
