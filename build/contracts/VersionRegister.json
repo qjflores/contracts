@@ -1,0 +1,49 @@
+{
+  "contract_name": "VersionRegister",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "versionHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "updateVersionMapping",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "versionHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContractByVersion",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    }
+  ],
+  "unlinked_binary": "0x606060405234610000575b60018054600160a060020a03191633600160a060020a03161790555b5b61010d806100366000396000f300606060405263ffffffff60e060020a6000350416633b65522d8114602c578063f1ad906b146047575b6000565b346000576045600435600160a060020a03602435166070565b005b34600057605460043560c3565b60408051600160a060020a039092168252519081900360200190f35b60015433600160a060020a039081169116146089576000565b6000828152602081905260409020805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b5b5050565b600081815260208190526040902054600160a060020a03165b9190505600a165627a7a723058206b08fe19f5bf51882d071efb13ea6a868a752a25ba2fdf79ea3013c8aab84b9d0029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1498796856014
+}
