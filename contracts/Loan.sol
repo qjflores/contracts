@@ -3,7 +3,6 @@ pragma solidity ^0.4.8;
 import "./LoanLib.sol";
 import "./RedeemableTokenLib.sol";
 
-/*import "zeppelin-solidity/contracts/token/ERC20.sol";*/
 
 /**
  * @title Loan
@@ -11,6 +10,7 @@ import "./RedeemableTokenLib.sol";
  * @dev Simple unsecured loan implementation with simple interest.
  * @dev Heavily based on the CrowdsaleToken contract in the
  *        OpenZeppelin reference contracts.
+ * @dev Requires
  */
 contract Loan {
   using LoanLib for LoanLib.Loan;
@@ -18,21 +18,48 @@ contract Loan {
   using AttestationLib for AttestationLib.Attestation;
   using TimeLockLib for TimeLockLib.TimeLock;
 
-  uint public constant decimals = 18;
-
   /**
-   EVENTS
-  */
-  event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
-  event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
-  event LoanTermBegin(bytes32 indexed _uuid, address indexed _borrower, uint _timestamp);
-  event LoanCreated(bytes32 indexed _uuid, address _borrower, address indexed _attestor, uint _timestamp);
-  event Transfer(bytes32 indexed _uuid, address from, address indexed to, uint value);
-  event Approval(bytes32 indexed _uuid, address indexed owner, address spender, uint value);
-  event InvestmentRedeemed(bytes32 indexed _uuid, address indexed _to, uint _value, uint _timestamp);
+   * EVENTS
+   */
+  event PeriodicRepayment(
+    bytes32 indexed _uuid,
+    address indexed _from,
+    uint _value, uint _timestamp
+  );
+
+  event Investment(
+    bytes32 indexed _uuid,
+    address indexed _from,
+    uint _value,
+    uint _timestamp
+  );
+
+  event LoanTermBegin(
+    bytes32 indexed _uuid,
+    address indexed _borrower,
+    uint _timestamp
+  );
+
+  event LoanCreated(
+    bytes32 indexed _uuid,
+    address _borrower,
+    address indexed _attestor,
+    uint _timestamp
+  );
+
+  event Transfer(
+    bytes32 indexed _uuid,
+    address _from,
+    address indexed _to,
+    uint _value,
+    uint _timestamp
+  );
+  event Approval(bytes32 indexed _uuid, address indexed _owner, address _spender, uint _value, uint _timestamp);
+  event InvestmentRedeemed(bytes32 indexed _uuid, address indexed _investor, address indexed _recipient, uint _value, uint _timestamp);
   event Attested(bytes32 indexed _uuid, address indexed _attestor, uint256 _timestamp);
 
   mapping (bytes32 => LoanLib.Loan) loans;
+  uint public constant decimals = 18;
 
   /**
     LOAN TERMS
@@ -52,15 +79,17 @@ contract Loan {
     decimals: since floats can't natively be represented in Solidity, decimals
       refers to the number of decimal points represented
   */
-    function createLoan(bytes32 uuid,
-                        address _borrower,
-                        address _attestor,
-                        uint _principal,
-                        LoanLib.PeriodType _periodType,
-                        uint _periodLength,
-                        uint _interest,
-                        uint _termLength,
-                        uint _fundingPeriodTimeLock) {
+  function createLoan(
+    bytes32 uuid,
+    address _borrower,
+    address _attestor,
+    uint _principal,
+    LoanLib.PeriodType _periodType,
+    uint _periodLength,
+    uint _interest,
+    uint _termLength,
+    uint _fundingPeriodTimeLock
+  ) {
     if (loans[uuid].borrower > 0)
       throw;
 

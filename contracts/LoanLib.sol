@@ -28,6 +28,7 @@ library LoanLib {
   event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
   event LoanTermBegin(bytes32 indexed _uuid, address indexed _borrower, uint _timestamp);
 
+
   /**
     LOAN TERMS
     ========================================================================

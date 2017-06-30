@@ -394,7 +394,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 1 to redeem his portion of the first monthly \
         payment once only", function() {
     investor_1_balance_before = web3.eth.getBalance(accounts[2]);
-    return loan.redeemValue(uuid1, {from: accounts[2]}).then(function(result) {
+    return loan.redeemValue(uuid1, accounts[2], {from: accounts[2]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[2],
@@ -409,7 +409,7 @@ contract('Loan', function(_accounts) {
                               paybackQuantity.times(proration[0]),
                               "did not prorate investor 1's payout correctly");
 
-      return assertThrows(loan.redeemValue(uuid1, {from: accounts[2]}),
+      return assertThrows(loan.redeemValue(uuid1, accounts[2], {from: accounts[2]}),
                       "should not allow investor 1 redeem when he's already \
                       redeemed his portion of this pay back.");
     })
@@ -418,7 +418,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 2 to redeem her portion of the first monthly \
         payment", function() {
     investor_2_balance_before = web3.eth.getBalance(accounts[3]);
-    return loan.redeemValue(uuid1, {from: accounts[3]}).then(function(result) {
+    return loan.redeemValue(uuid1, accounts[3], {from: accounts[3]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[3],
@@ -446,7 +446,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 1 to redeem his portion of the final monthly \
         payment only once", function() {
     investor_1_balance_before = web3.eth.getBalance(accounts[2]);
-    return loan.redeemValue(uuid1, {from: accounts[2]}).then(function(result) {
+    return loan.redeemValue(uuid1, accounts[2], {from: accounts[2]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[2],
@@ -460,7 +460,7 @@ contract('Loan', function(_accounts) {
       assertBigNumberEquality(investor_1_payout, paybackQuantity.times(proration[0]),
                     "did not prorate investor 1's second payout correctly");
 
-      return assertThrows(loan.redeemValue(uuid1, {from: accounts[2]}),
+      return assertThrows(loan.redeemValue(uuid1, accounts[2], {from: accounts[2]}),
                           "should not allow investor 1 redeem when he's already \
                           redeemed the full portion of his share of the loan");
     });
@@ -469,7 +469,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 2 to redeem her portion of the final monthly \
         payment", function() {
     investor_2_balance_before = web3.eth.getBalance(accounts[3]);
-    loan.redeemValue(uuid1, {from: accounts[3]}).then(function(result) {
+    loan.redeemValue(uuid1, accounts[3], {from: accounts[3]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[3],
@@ -486,7 +486,7 @@ contract('Loan', function(_accounts) {
   it("should allow investor 3 to redeem his unclaimed portion of the total two \
         monthly payments", function() {
     investor_3_balance_before = web3.eth.getBalance(accounts[4]);
-    return loan.redeemValue(uuid1, {from: accounts[4]}).then(function(result) {
+    return loan.redeemValue(uuid1, accounts[4], {from: accounts[4]}).then(function(result) {
       verifyEvent(result.logs[0], { event: "InvestmentRedeemed",
                                     args: {
                                       _to: accounts[4],
