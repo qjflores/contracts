@@ -10,7 +10,8 @@ import "./RedeemableTokenLib.sol";
  * @dev Simple unsecured loan implementation with simple interest.
  * @dev Heavily based on the CrowdsaleToken contract in the
  *        OpenZeppelin reference contracts.
- * @dev Requires
+ * @dev The loan contract stores data associated with all unsecured loans
+ *        in the Dharma Network's v0.1.0 release.
  */
 contract Loan {
   using LoanLib for LoanLib.Loan;
@@ -54,31 +55,54 @@ contract Loan {
     uint _value,
     uint _timestamp
   );
-  event Approval(bytes32 indexed _uuid, address indexed _owner, address _spender, uint _value, uint _timestamp);
-  event InvestmentRedeemed(bytes32 indexed _uuid, address indexed _investor, address indexed _recipient, uint _value, uint _timestamp);
-  event Attested(bytes32 indexed _uuid, address indexed _attestor, uint256 _timestamp);
 
+  event Approval(
+    bytes32 indexed _uuid,
+    address indexed _owner,
+    address _spender,
+    uint _value,
+    uint _timestamp
+  );
+
+  event InvestmentRedeemed(
+    bytes32 indexed _uuid,
+    address indexed _investor,
+    address indexed _recipient,
+    uint _value,
+    uint _timestamp
+  );
+
+  event Attested(
+    bytes32 indexed _uuid,
+    address indexed _attestor,
+    uint256 _timestamp
+  );
+
+  // Mapping associating loan data stores with their corresponding 32 byte UUIDs
   mapping (bytes32 => LoanLib.Loan) loans;
-  uint public constant decimals = 18;
+
+
+  function () payable {
+    throw;
+  }
 
   /**
-    LOAN TERMS
-    ========================================================================
-    Period: refers to the time period between each repayment due
-      date
-    PeriodType: refers to the unit of time in which the period and term length
-      are denominated
-    periodLength: refers to the number of time units of PeriodType are in any
-      given payment period.
-        (i.e. period = periodLength * periodType)
-    termLength: refers to the number of time units of PeriodType that are in
-      the entire loan's term
-    Principal: refers to the amount of Wei requested by a borrower
-    interest: is the amount of interest in ether owed on top principal repayments
-      at each payment period's due date (TODO: Add compounding interest)
-    decimals: since floats can't natively be represented in Solidity, decimals
-      refers to the number of decimal points represented
-  */
+   * @dev Creates a loan request with the given terms and borrower-chosen UUID.
+   *      UUIDs cannot conflict with existing loan request UUIDs.
+   * @param _borrower the address to which principal wil be paid out
+   * @param _attestor the address of the attestor who's rating the loan's
+   *   default risk
+   * @param _principal the amount in Wei desired by the borrower.
+   * @param _periodType the time unit with which payment periods are calculated
+   * @param _periodLength the number of time units of PeriodType are in any
+   *    given payment period. (i.e. period = periodLength * periodType)
+   * @param _interest the amount of interest in Wei owed on top of principal
+   *    repayments at each payment period's due date/
+   * @param _termLength refers to the number of time units of PeriodType that are in
+   *    the entire loan's term
+   *  @param _fundingPeriodTimeLock the timestamp after which, if the loan is as
+   *    of yet unfunded, funders can withdraw their investments.
+   */
   function createLoan(
     bytes32 uuid,
     address _borrower,
@@ -142,10 +166,6 @@ contract Loan {
 
   function getTotalInvested(bytes32 uuid) returns (uint) {
     return loans[uuid].totalInvested;
-  }
-
-  function () payable {
-    throw;
   }
 
   /**

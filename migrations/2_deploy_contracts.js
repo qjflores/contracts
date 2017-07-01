@@ -25,14 +25,17 @@ module.exports = function(deployer, network, accounts) {
   deployer.link(AttestationLib, Loan);
   deployer.link(TimeLockLib, Loan);
 
+  let versionRegister;
+  const versionHash = web3.sha3(Metadata.version);
+
   deployer.deploy(Loan).then(function() {
     return deployer.deploy(VersionRegister);
   }).then(function() {
     return VersionRegister.deployed();
-  }).then(function(versionRegister) {
-    const versionHash = web3.sha3(Metadata.version);
-    versionRegister.updateCurrentVersion(versionHash)
-    versionRegister.updateVersionMapping(versionHash, Loan.address)
+  }).then(function(_versionRegister) {
+    versionRegister = _versionRegister;
+    return versionRegister.updateCurrentVersion(versionHash)
+  }).then(function(result) {
+    return versionRegister.updateVersionMapping(versionHash, Loan.address)
   });
-
 };
