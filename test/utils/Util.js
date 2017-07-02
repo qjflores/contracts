@@ -1,9 +1,10 @@
 const expect = require('expect.js');
+const BigNumber = require('bignumber.js')
 
 class Util {
   constructor(web3) {
     this.web3 = web3;
-    this.gasPrice = web3.toBigNumber('1');
+    this.gasPrice = web3.toBigNumber('100000000000');
   }
 
   setTimeForward(timeDiff) {
@@ -23,15 +24,41 @@ class Util {
     }.bind(this))
   }
 
-  getGasCosts(txHash) {
+  async setBlockNumberForward(blockDiff) {
+    for (let i = 0; i < blockDiff; i++) {
+      await this.incrementBlockNumber()
+    }
+  }
+
+  incrementBlockNumber() {
     return new Promise(function(accept, reject) {
-      this.web3.eth.getTransactionReceipt(txHash, function(err, tx) {
-        if (err) reject(err)
-        else {
-          const gasCost = this.gasPrice.times(tx.gasUsed);
-          accept(gasCost);
+      this.web3.currentProvider.sendAsync({
+        method: "evm_mine",
+        jsonrpc: "2.0",
+        id: Date.now()
+      }, function(err, result) {
+        if (err) {
+          reject(err);
+        } else {
+          accept();
         }
-      }.bind(this))
+      });
+    }.bind(this))
+  }
+
+  getGasCosts(result) {
+    return new Promise(function(accept, reject) {
+      if ('tx' in result) {
+        accept(this.gasPrice.times(result.receipt.gasUsed));
+      } else {
+        this.web3.eth.getTransactionReceipt(txHash, function(err, tx) {
+          if (err) reject(err)
+          else {
+            const gasCost = this.gasPrice.times(tx.gasUsed);
+            accept(gasCost);
+          }
+        }.bind(this))
+      }
     }.bind(this));
   }
 
@@ -45,6 +72,13 @@ class Util {
       return data.slice(2)
     else
       return data;
+  }
+
+  assertEventEquality(log, expectedLog) {
+    assert.equal(log.event, expectedLog.event);
+    Object.keys(expectedLog.args).forEach(function(key, index) {
+      expect(log.args[key].toString()).to.be(expectedLog.args[key].toString());
+    });
   }
 }
 

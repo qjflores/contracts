@@ -16,7 +16,6 @@ import "./RedeemableTokenLib.sol";
 contract Loan {
   using LoanLib for LoanLib.Loan;
   using RedeemableTokenLib for RedeemableTokenLib.Accounting;
-
   /**
    * EVENTS
    */
@@ -40,12 +39,10 @@ contract Loan {
   );
 
   event LoanCreated(
-    bytes32 indexed _uuid,
-    address _borrower,
-    address indexed _attestor,
-    uint auctionPeriod,
-    uint reviewPeriod,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address indexed borrower,
+    address indexed attestor,
+    uint blockNumber
   );
 
   event Transfer(
@@ -74,7 +71,7 @@ contract Loan {
 
   // Mapping associating loan data stores with their corresponding 32 byte UUIDs
   mapping (bytes32 => LoanLib.Loan) loans;
-
+  uint256 public constant DECIMALS = 18;
 
   function () payable {
     throw;
@@ -154,7 +151,7 @@ contract Loan {
     loans[uuid].auctionEndBlock = block.number + auctionLengthInBlocks;
     loans[uuid].reviewPeriodEndBlock = loans[uuid].auctionEndBlock + reviewPeriodLengthInBlocks;
 
-    LoanCreated(uuid, borrower, attestor, auctionLengthInBlocks, reviewPeriodLengthInBlocks, block.number);
+    LoanCreated(uuid, borrower, attestor, block.number);
   }
 
   function getData(bytes32 uuid)
@@ -221,6 +218,10 @@ contract Loan {
     return loans[uuid].reviewPeriodEndBlock;
   }
 
+  function getState(bytes32 uuid) returns (LoanLib.LoanState) {
+    return loans[uuid].state;
+  }
+
   /**
    * @dev Funds the loan request, refunds any remaining ether if the transaction
    *    fully funds the loan, issues tokens representing ownership in the loan
@@ -228,8 +229,24 @@ contract Loan {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(bytes32 uuid, address tokenRecipient) payable {
-    loans[uuid].fundLoan(uuid, tokenRecipient);
+  function bid(bytes32 uuid, address tokenRecipient, uint256 minInterestRate) payable {
+    loans[uuid].bid(tokenRecipient, minInterestRate);
+  }
+
+  function acceptBids(bytes32 uuid, address[] bidders, uint256[] bidAmounts) {
+    loans[uuid].acceptBids(uuid, bidders, bidAmounts);
+  }
+
+  function rejectBids(bytes32 uuid) {
+    loans[uuid].rejectBids();
+  }
+
+  function getNumBids(bytes32 uuid) returns (uint256) {
+    return loans[uuid].getNumBids();
+  }
+
+  function getBid(bytes32 uuid, uint256 index) returns (address, uint256, uint256) {
+    return loans[uuid].getBid(index);
   }
 
   /**

@@ -16,16 +16,48 @@ library LoanLib {
   using SafeMath for uint;
 
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
+  enum LoanState { Auction, Review, Accepted, Rejected }
+
+  modifier onlyLoanState(Loan storage self, LoanState state) {
+    updateCurrentLoanState(self);
+    if (self.state != state) {
+      throw;
+    }
+    _;
+  }
+
+  modifier onlyBorrower(Loan storage self) {
+    if (msg.sender != self.borrower) {
+      throw;
+    }
+    _;
+  }
 
   /**
    EVENTS
   */
   event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
   event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
-  event LoanTermBegin(bytes32 indexed _uuid, address indexed _borrower, uint _timestamp);
+  event Log(string theString);
+  event LoanTermBegin(
+    bytes32 indexed uuid,
+    address indexed borrower,
+    address[] investors,
+    uint blockNumber
+  );
 
+  uint8 public constant MAX_INVESTORS_PER_LOAN = 10;
+
+  struct Bid {
+    address investor;
+    uint256 amount;
+    uint256 minInterestRate;
+  }
 
   struct Loan {
+    address[] bidders;
+    mapping (address => Bid) bids;
+    LoanState state;
     RedeemableTokenLib.Accounting token;
     address borrower;
     uint256 principal;
@@ -47,11 +79,8 @@ library LoanLib {
       MODIFIERS
     ========================================================================
   */
-  modifier assert(bool required) {
-    if (!required) {
-      throw;
-    }
-    _;
+  function duringAuctionPeriod(Loan storage self) returns (bool duringAuctionPeriod) {
+    return (self.state == LoanState.Auction);
   }
 
   function beforeLoanFunded(Loan storage self) returns (bool beforeLoanFunded) {
@@ -62,47 +91,79 @@ library LoanLib {
     return (self.totalInvested == self.token.totalSupply);
   }
 
-  /**
-   * @dev Funds the loan request, refunds any remaining ether if the transaction
-   *    fully funds the loan, issues tokens representing ownership in the loan
-   *    to tokenRecipient, and transfers the principal to the borrower if the
-   *    loan is fully funded.
-   * @param tokenRecipient The address which will recieve the new loan tokens.
-   */
-  function fundLoan(Loan storage self, bytes32 uuid, address tokenRecipient) {
+  function bid(Loan storage self, address tokenRecipient, uint256 minInterestRate) {
+    updateCurrentLoanState(self);
+    assertLoanState(self, LoanState.Auction);
+
     if (msg.value == 0) {
       throw;
     }
 
-    uint remainingPrincipal = self.token.totalSupply.sub(self.totalInvested);
-
-    uint currentInvestmentAmount = SafeMath.min256(remainingPrincipal, msg.value);
-    self.totalInvested = self.totalInvested.add(currentInvestmentAmount);
-
-    self.token.balances[tokenRecipient] = self.token.balances[tokenRecipient].add(currentInvestmentAmount);
-    Investment(uuid, tokenRecipient, currentInvestmentAmount, block.timestamp);
-
-    if (loanFullyFunded(self)) {
-      if (!self.borrower.send(self.token.totalSupply)) {
-        throw;
-      }
-      LoanTermBegin(uuid, self.borrower, block.timestamp);
+    if (self.bids[tokenRecipient].investor != address(0)) {
+      throw;
     }
 
-    if (msg.value.sub(currentInvestmentAmount) > 0) {
-      if(!msg.sender.send(msg.value.sub(currentInvestmentAmount)))
-        throw;
-    }
+    self.bids[tokenRecipient] = Bid(tokenRecipient, msg.value, minInterestRate);
+    self.bidders.push(tokenRecipient);
   }
 
+  function acceptBids(
+    Loan storage self,
+    bytes32 uuid,
+    address[] bidders,
+    uint256[] bidAmounts
+  ) onlyBorrower(self)
+    onlyLoanState(self, LoanState.Review)
+  {
+
+    if (bidders.length > MAX_INVESTORS_PER_LOAN ||
+          bidAmounts.length > MAX_INVESTORS_PER_LOAN) {
+      throw;
+    }
+
+    uint256 totalBalanceAccepted = 0;
+
+    for (uint8 i = 0; i < bidders.length; i++) {
+      self.bids[bidders[i]].amount = self.bids[bidders[i]].amount.sub(bidAmounts[i]);
+      self.token.balances[bidders[i]] = bidAmounts[i];
+      totalBalanceAccepted = totalBalanceAccepted.add(bidAmounts[i]);
+    }
+
+    if (totalBalanceAccepted != self.principal) {
+      throw;
+    }
+
+    if (!self.borrower.send(self.principal)) {
+      throw;
+    }
+
+    self.state = LoanState.Accepted;
+
+    LoanTermBegin(uuid, self.borrower, bidders, block.number);
+  }
+
+  function rejectBids(Loan storage self) onlyLoanState(self, LoanState.Review) {
+    self.state = LoanState.Rejected;
+  }
+
+  function getNumBids(Loan storage self) returns (uint256) {
+    return self.bidders.length;
+  }
+
+  function getBid(Loan storage self, uint256 index) returns (address, uint256, uint256) {
+    return (
+      self.bids[self.bidders[index]].investor,
+      self.bids[self.bidders[index]].amount,
+      self.bids[self.bidders[index]].minInterestRate
+    );
+  }
   /**
    * @dev If the time lock period has lapsed and the loan is, as of yet,
    *    not fully funded, withdrawInvestment allows investors to withdraw
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment(Loan storage self)
-        assert(beforeLoanFunded(self)) {
+  function withdrawInvestment(Loan storage self) {
     uint investmentRefund = self.token.balanceOf(msg.sender);
     self.token.balances[msg.sender] = 0;
 
@@ -118,8 +179,7 @@ library LoanLib {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment(Loan storage self, bytes32 uuid)
-      assert(afterLoanFunded(self)) {
+  function periodicRepayment(Loan storage self, bytes32 uuid) {
     if (msg.value == 0)
       throw;
 
@@ -135,8 +195,7 @@ library LoanLib {
    *    the borrower is in the midst of their loan term.
    * @return Whether investors should be allowed to redeem repayments yet.
    */
-  function isRedeemable(Loan storage self, address owner)
-              assert(afterLoanFunded(self)) returns (bool redeemable) {
+  function isRedeemable(Loan storage self, address owner) returns (bool redeemable) {
     return (self.token.balanceOf(owner) > 0);
   }
 
@@ -146,5 +205,24 @@ library LoanLib {
    */
   function loanFullyFunded(Loan storage self) returns (bool funded) {
     return (self.totalInvested >= self.token.totalSupply);
+  }
+
+  function updateCurrentLoanState(Loan storage self) {
+    if (block.number <= self.auctionEndBlock) {
+      self.state = LoanState.Auction;
+    } else if (block.number > self.auctionEndBlock &&
+        block.number <= self.reviewPeriodEndBlock) {
+      self.state = LoanState.Review;
+    } else if (block.number > self.reviewPeriodEndBlock) {
+      if (self.state != LoanState.Accepted && self.state != LoanState.Rejected) {
+        self.state = LoanState.Rejected;
+      }
+    }
+  }
+
+  function assertLoanState(Loan storage self, LoanState state) internal {
+    if (self.state != state) {
+      throw;
+    }
   }
 }
