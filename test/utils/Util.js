@@ -39,6 +39,13 @@ class Util {
     expect(err.toString().indexOf('invalid JUMP') > -1 ||
       err.toString().indexOf('out of gas') > -1).to.be(true);
   }
+
+  static stripZeroEx(data) {
+    if (data.slice(0,2) === '0x')
+      return data.slice(2)
+    else
+      return data;
+  }
 }
 
 module.exports = Util;

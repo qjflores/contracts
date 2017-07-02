@@ -8,22 +8,16 @@ var Loan = artifacts.require("./Loan.sol");
 var Metadata = require("../ethpm.json");
 
 module.exports = function(deployer, network, accounts) {
-  deployer.deploy(TimeLockLib);
   deployer.deploy(SafeMath);
-  deployer.deploy(AttestationLib);
   deployer.link(SafeMath, RedeemableTokenLib);
   deployer.deploy(RedeemableTokenLib);
-  deployer.link(TimeLockLib, LoanLib);
   deployer.link(SafeMath, LoanLib);
-  deployer.link(AttestationLib, LoanLib);
   deployer.link(RedeemableTokenLib, LoanLib);
 
   deployer.deploy(LoanLib);
 
   deployer.link(LoanLib, Loan);
   deployer.link(RedeemableTokenLib, Loan);
-  deployer.link(AttestationLib, Loan);
-  deployer.link(TimeLockLib, Loan);
 
   let versionRegister;
   const versionHash = web3.sha3(Metadata.version);

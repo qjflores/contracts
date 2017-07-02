@@ -1,4 +1,5 @@
-const exec = require('child_process').exec;
+require("babel-register");
+require("babel-polyfill");
 
 module.exports = {
   networks: {

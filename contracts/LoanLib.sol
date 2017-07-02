@@ -1,8 +1,6 @@
 
 pragma solidity ^0.4.8;
 
-import "./AttestationLib.sol";
-import "./TimeLockLib.sol";
 import "./RedeemableTokenLib.sol";
 
 
@@ -15,8 +13,6 @@ import "./RedeemableTokenLib.sol";
  */
 library LoanLib {
   using RedeemableTokenLib for RedeemableTokenLib.Accounting;
-  using AttestationLib for AttestationLib.Attestation;
-  using TimeLockLib for TimeLockLib.TimeLock;
   using SafeMath for uint;
 
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
@@ -29,36 +25,21 @@ library LoanLib {
   event LoanTermBegin(bytes32 indexed _uuid, address indexed _borrower, uint _timestamp);
 
 
-  /**
-    LOAN TERMS
-    ========================================================================
-    Period: refers to the time period between each repayment due
-      date
-    PeriodType: refers to the unit of time in which the period and term length
-      are denominated
-    periodLength: refers to the number of time units of PeriodType are in any
-      given payment period.
-        (i.e. period = periodLength * periodType)
-    termLength: refers to the number of time units of PeriodType that are in
-      the entire loan's term
-    Principal: refers to the amount of Wei requested by a borrower
-    interestRate: is the percentage interest owed on top principal repayments
-      at each payment period's due date (non-compounding)
-    decimals: since floats can't natively be represented in Solidity, decimals
-      refers to the number of decimal points represented by interestRate
-        (i.e. interestRate = % Interest * (10 ** decimals))
-  */
-
   struct Loan {
     RedeemableTokenLib.Accounting token;
-    AttestationLib.Attestation attestation;
-    TimeLockLib.TimeLock timelock;
     address borrower;
-    uint totalInvested;
-    PeriodType periodType;
-    uint periodLength;
-    uint termLength;
-    uint interest;
+    uint256 principal;
+    bytes terms;
+    address attestor;
+    uint256 attestorFee;
+    uint256 defaultRisk;
+    uint256 totalInvested;
+    uint256 interestRate;
+    bytes32 r;
+    bytes32 s;
+    uint8 v;
+    uint256 auctionEndBlock;
+    uint256 reviewPeriodEndBlock;
   }
 
 
@@ -88,8 +69,7 @@ library LoanLib {
    *    loan is fully funded.
    * @param tokenRecipient The address which will recieve the new loan tokens.
    */
-  function fundLoan(Loan storage self, bytes32 uuid, address tokenRecipient)
-        assert(self.attestation.afterAttestedTo()) {
+  function fundLoan(Loan storage self, bytes32 uuid, address tokenRecipient) {
     if (msg.value == 0) {
       throw;
     }
@@ -122,7 +102,6 @@ library LoanLib {
    *    emptied out, the contract self destructs.
    */
   function withdrawInvestment(Loan storage self)
-        assert(self.timelock.afterTimeLock())
         assert(beforeLoanFunded(self)) {
     uint investmentRefund = self.token.balanceOf(msg.sender);
     self.token.balances[msg.sender] = 0;

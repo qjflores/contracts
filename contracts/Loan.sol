@@ -16,8 +16,6 @@ import "./RedeemableTokenLib.sol";
 contract Loan {
   using LoanLib for LoanLib.Loan;
   using RedeemableTokenLib for RedeemableTokenLib.Accounting;
-  using AttestationLib for AttestationLib.Attestation;
-  using TimeLockLib for TimeLockLib.TimeLock;
 
   /**
    * EVENTS
@@ -45,6 +43,8 @@ contract Loan {
     bytes32 indexed _uuid,
     address _borrower,
     address indexed _attestor,
+    uint auctionPeriod,
+    uint reviewPeriod,
     uint _timestamp
   );
 
@@ -72,12 +72,6 @@ contract Loan {
     uint _timestamp
   );
 
-  event Attested(
-    bytes32 indexed _uuid,
-    address indexed _attestor,
-    uint256 _timestamp
-  );
-
   // Mapping associating loan data stores with their corresponding 32 byte UUIDs
   mapping (bytes32 => LoanLib.Loan) loans;
 
@@ -89,83 +83,142 @@ contract Loan {
   /**
    * @dev Creates a loan request with the given terms and borrower-chosen UUID.
    *      UUIDs cannot conflict with existing loan request UUIDs.
-   * @param _borrower the address to which principal wil be paid out
-   * @param _attestor the address of the attestor who's rating the loan's
-   *   default risk
-   * @param _principal the amount in Wei desired by the borrower.
-   * @param _periodType the time unit with which payment periods are calculated
-   * @param _periodLength the number of time units of PeriodType are in any
-   *    given payment period. (i.e. period = periodLength * periodType)
-   * @param _interest the amount of interest in Wei owed on top of principal
-   *    repayments at each payment period's due date/
-   * @param _termLength refers to the number of time units of PeriodType that are in
-   *    the entire loan's term
-   *  @param _fundingPeriodTimeLock the timestamp after which, if the loan is as
-   *    of yet unfunded, funders can withdraw their investments.
+   * @param uuid Borrower-chosen UUID for the given loan.
+   * @param borrower the address to which principal wil be paid out
+   * @param principal the amount in Wei desired by the borrower.
+   * @param terms byte array defining the terms around which defaults will be
+   *   evaluated off chain.  The first 32 bytes of any terms string are the
+   *   Keccak-256 hash of the terms schema version, and all following values
+   *   adhere to a schema published off chain.
+   * @param attestorFee the amount in Wei paid out to the attestor on top of
+   *   the principal when the loan is funded.
+   * @param defaultRisk the likelihood of default, as predicted by the attestor
+   * @param r ECDSA Signature of the above arguments, as signed by the attestor
+   * @param s ECDSA Signature of the above arguments, as signed by the attestor
+   * @param v ECDSA Signature of the above arguments, as signed by the attestor
+   * @param auctionLengthInBlocks The number of blocks for which the loan
+   *    auction will last, after which, if the loan is funded, the borrower
+   *    will have the choice of either accepting or rejecting the terms
+   * @param reviewPeriodLengthInBlocks The number of blocks which the borrower
+   *    has to decide whether to accept the given terms after an auction has
+   *    ended (during which all funding bids cannot be withdrawn)
    */
   function createLoan(
     bytes32 uuid,
-    address _borrower,
-    address _attestor,
-    uint _principal,
-    LoanLib.PeriodType _periodType,
-    uint _periodLength,
-    uint _interest,
-    uint _termLength,
-    uint _fundingPeriodTimeLock
+    address borrower,
+    uint256 principal,
+    bytes terms,
+    address attestor,
+    uint256 attestorFee,
+    uint256 defaultRisk,
+    bytes32 r,
+    bytes32 s,
+    uint8 v,
+    uint256 auctionLengthInBlocks,
+    uint256 reviewPeriodLengthInBlocks
   ) {
     if (loans[uuid].borrower > 0)
       throw;
 
-    loans[uuid].borrower = _borrower;
-    loans[uuid].token.totalSupply = _principal;
-    loans[uuid].attestation.setAttestor(_attestor);
-    loans[uuid].timelock.timeLock = _fundingPeriodTimeLock;
-    loans[uuid].periodType = _periodType;
-    loans[uuid].periodLength = _periodLength;
-    loans[uuid].interest = _interest;
-    loans[uuid].termLength = _termLength;
-    LoanCreated(uuid, _borrower, _attestor, block.timestamp);
+    /*
+      Each loan has a borrower and an attestor.
+    */
+    loans[uuid].borrower = borrower;
+    loans[uuid].attestor = attestor;
+
+    /*
+      The total amount of funds raised will be the sum of the desired principal
+      and desired attestorFee.
+    */
+    loans[uuid].principal = principal;
+    loans[uuid].attestorFee = attestorFee;
+    loans[uuid].token.totalSupply = principal + attestorFee;
+
+    /*
+      Data points evaluated by clients off chain in making investment decisions
+    */
+    loans[uuid].defaultRisk = defaultRisk;
+    loans[uuid].terms = terms;
+
+    /* Attestor's ECDSA signature */
+    loans[uuid].r = r;
+    loans[uuid].s = s;
+    loans[uuid].v = v;
+
+    /* Auction Data */
+    if (auctionLengthInBlocks == 0)
+      throw;
+    if (reviewPeriodLengthInBlocks == 0)
+      throw;
+
+    loans[uuid].auctionEndBlock = block.number + auctionLengthInBlocks;
+    loans[uuid].reviewPeriodEndBlock = loans[uuid].auctionEndBlock + reviewPeriodLengthInBlocks;
+
+    LoanCreated(uuid, borrower, attestor, auctionLengthInBlocks, reviewPeriodLengthInBlocks, block.number);
+  }
+
+  function getData(bytes32 uuid)
+    returns (
+      address,
+      uint256,
+      bytes,
+      address,
+      uint256,
+      uint256
+    ) {
+    return (
+      loans[uuid].borrower,
+      loans[uuid].principal,
+      loans[uuid].terms,
+      loans[uuid].attestor,
+      loans[uuid].attestorFee,
+      loans[uuid].defaultRisk
+    );
   }
 
   function getBorrower(bytes32 uuid) returns (address) {
     return loans[uuid].borrower;
   }
 
-  function getAttestor(bytes32 uuid) returns (address) {
-    return loans[uuid].attestation.attestor;
-  }
-
-  function getAttestation(bytes32 uuid) returns (bytes) {
-    return loans[uuid].attestation.attestationCommitment;
-  }
-
   function getPrincipal(bytes32 uuid) returns (uint) {
-    return loans[uuid].token.totalSupply;
+    return loans[uuid].principal;
   }
 
-  function getPeriodType(bytes32 uuid) returns (LoanLib.PeriodType) {
-    return loans[uuid].periodType;
+  function getTerms(bytes32 uuid) returns (bytes) {
+    return loans[uuid].terms;
   }
 
-  function getPeriodLength(bytes32 uuid) returns (uint) {
-    return loans[uuid].periodLength;
+  function getAttestor(bytes32 uuid) returns (address) {
+    return loans[uuid].attestor;
   }
 
-  function getInterest(bytes32 uuid) returns (uint) {
-    return loans[uuid].interest;
+  function getAttestorFee(bytes32 uuid) returns (uint256) {
+    return loans[uuid].attestorFee;
   }
 
-  function getTermLength(bytes32 uuid) returns (uint) {
-    return loans[uuid].termLength;
+  function getDefaultRisk(bytes32 uuid) returns (uint256) {
+    return loans[uuid].defaultRisk;
   }
 
-  function getTimelock(bytes32 uuid) returns (uint) {
-    return loans[uuid].timelock.timeLock;
+  function getAttestorSignature(bytes32 uuid)
+    returns (bytes32, bytes32, uint8) {
+    return (loans[uuid].r, loans[uuid].s, loans[uuid].v);
   }
 
   function getTotalInvested(bytes32 uuid) returns (uint) {
     return loans[uuid].totalInvested;
+  }
+
+  function getTotalSupply(bytes32 uuid) returns (uint) {
+    return loans[uuid].token.totalSupply;
+  }
+
+  function getAuctionEndBlock(bytes32 uuid) returns (uint) {
+    return loans[uuid].auctionEndBlock;
+  }
+
+  function getReviewPeriodEndBlock(bytes32 uuid) returns (uint) {
+    return loans[uuid].reviewPeriodEndBlock;
   }
 
   /**
@@ -244,10 +297,6 @@ contract Loan {
     return loans[uuid].token.allowance(_owner, _spender);
   }
 
-  function totalSupply(bytes32 uuid) returns (uint) {
-    return loans[uuid].token.totalSupply;
-  }
-
   /*
     At any point in time in which token value is redeemable, the amount of
    tokens an investor X is entitled to equals:
@@ -259,9 +308,5 @@ contract Loan {
 
   function getRedeemableValue(bytes32 uuid) returns (uint) {
     return loans[uuid].token.redeemableValue;
-  }
-
-  function attest(bytes32 uuid, bytes attestationCommitment) {
-    loans[uuid].attestation.attest(uuid, attestationCommitment);
   }
 }
