@@ -1,8 +1,9 @@
+import _ from 'lodash';
 import uuidV4 from 'uuid/V4';
 import {web3, util} from './init.js';
 import {PERIOD_TYPE, LOAN_STATE} from './utils/Constants.js';
 import LoanFactory from './utils/LoanFactory.js';
-import {LoanCreated, LoanTermBegin} from './utils/LoanEvents.js'
+import {LoanCreated, LoanTermBegin, LoanBidsRejected} from './utils/LoanEvents.js'
 import expect from 'expect.js';
 import Random from 'random-js';
 
@@ -10,7 +11,7 @@ const Loan = artifacts.require("./Loan.sol");
 
 contract("Loan", (accounts) => {
   const TERMS_SCHEMA_VERSION = "0.1.0";
-  const LOAN =  LoanFactory.generateSignedLoan({
+  const LOAN_DATA = {
     uuid: web3.sha3(uuidV4()),
     borrower: accounts[0],
     principal: web3.toWei(1, 'ether'),
@@ -24,7 +25,8 @@ contract("Loan", (accounts) => {
     attestor: accounts[1],
     attestorFee: web3.toWei(0.001, 'ether'),
     defaultRisk: web3.toWei(0.73, 'ether')
-  });
+  };
+  const LOAN = LoanFactory.generateSignedLoan(LOAN_DATA);
   const AUCTION_LENGTH_IN_BLOCKS = 20;
   const REVIEW_PERIOD_IN_BLOCKS = 40;
   const INVESTORS = accounts.slice(2,14);
@@ -276,7 +278,7 @@ contract("Loan", (accounts) => {
     })
   })
 
-  describe('#acceptTerms()', () => {
+  describe('#acceptBids()', () => {
     it ("should throw when non-borrower tries to accept terms", async () => {
       try {
         await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
@@ -387,6 +389,53 @@ contract("Loan", (accounts) => {
 
       let nonInvestorBalance = await loan.balanceOf(LOAN.uuid, INVESTORS[5])
       expect(nonInvestorBalance.equals(0)).to.be(true);
+    })
+
+    it('should throw if borrower tries to reject after accepting', async () => {
+      try {
+        await loan.rejectBids(LOAN.uuid);
+        expect().fail("should throw error");
+      } catch (err) {
+        util.assertThrowMessage(err);
+      }
+    })
+  })
+
+  describe('#rejectBids()', () => {
+    let loanInReviewData;
+    let loanInReview;
+
+    beforeEach(async () => {
+      loanInReviewData = _.cloneDeep(LOAN_DATA);
+      loanInReviewData.uuid = web3.sha3(uuidV4());
+      loanInReview = await LoanFactory.generateLoanAtState(loanInReviewData,
+        loan, LOAN_STATE.REVIEW);
+    })
+
+    it('should allow a borrower to reject the bids', async () => {
+      const auctionEndBlock = await loan.getAuctionEndBlock.call(loanInReview.uuid)
+      const reviewPeriodEndBlock = await loan.getReviewPeriodEndBlock.call(loanInReview.uuid)
+
+      const result = await loan.rejectBids(loanInReview.uuid);
+
+      util.assertEventEquality(result.logs[0], LoanBidsRejected({
+        uuid: loanInReview.uuid,
+        borrower: loanInReview.borrower,
+        blockNumber: result.receipt.blockNumber
+      }));
+
+      const state = await loan.getState.call(loanInReview.uuid);
+      expect(state.equals(LOAN_STATE.REJECTED)).to.be(true);
+
+    })
+
+    it('should throw when non-borrower tries to reject the bids', async () => {
+      try {
+        await loan.rejectBids(loanInReview.uuid, { from: loanInReview.attestor });
+        expect().fail("should throw error");
+      } catch (err) {
+        util.assertThrowMessage(err);
+      }
     })
   })
 

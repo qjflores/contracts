@@ -38,11 +38,16 @@ library LoanLib {
   */
   event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
   event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
-  event Log(string theString);
   event LoanTermBegin(
     bytes32 indexed uuid,
     address indexed borrower,
     address[] investors,
+    uint blockNumber
+  );
+
+  event LoanBidsRejected(
+    bytes32 indexed uuid,
+    address indexed borrower,
     uint blockNumber
   );
 
@@ -142,8 +147,12 @@ library LoanLib {
     LoanTermBegin(uuid, self.borrower, bidders, block.number);
   }
 
-  function rejectBids(Loan storage self) onlyLoanState(self, LoanState.Review) {
+  function rejectBids(Loan storage self, bytes32 uuid)
+    onlyBorrower(self)
+    onlyLoanState(self, LoanState.Review)
+  {
     self.state = LoanState.Rejected;
+    LoanBidsRejected(uuid, self.borrower, block.number);
   }
 
   function getNumBids(Loan storage self) returns (uint256) {
@@ -210,12 +219,13 @@ library LoanLib {
   function updateCurrentLoanState(Loan storage self) {
     if (block.number <= self.auctionEndBlock) {
       self.state = LoanState.Auction;
-    } else if (block.number > self.auctionEndBlock &&
-        block.number <= self.reviewPeriodEndBlock) {
-      self.state = LoanState.Review;
-    } else if (block.number > self.reviewPeriodEndBlock) {
+    } else if (block.number > self.auctionEndBlock) {
       if (self.state != LoanState.Accepted && self.state != LoanState.Rejected) {
-        self.state = LoanState.Rejected;
+        if (block.number <= self.reviewPeriodEndBlock) {
+          self.state = LoanState.Review;
+        } else {
+          self.state = LoanState.Rejected;
+        }
       }
     }
   }

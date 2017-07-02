@@ -69,6 +69,12 @@ contract Loan {
     uint _timestamp
   );
 
+  event LoanBidsRejected(
+    bytes32 indexed uuid,
+    address indexed borrower,
+    uint blockNumber
+  );
+
   // Mapping associating loan data stores with their corresponding 32 byte UUIDs
   mapping (bytes32 => LoanLib.Loan) loans;
   uint256 public constant DECIMALS = 18;
@@ -238,7 +244,7 @@ contract Loan {
   }
 
   function rejectBids(bytes32 uuid) {
-    loans[uuid].rejectBids();
+    loans[uuid].rejectBids(uuid);
   }
 
   function getNumBids(bytes32 uuid) returns (uint256) {

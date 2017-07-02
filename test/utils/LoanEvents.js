@@ -21,5 +21,16 @@ module.exports = {
         blockNumber: params.blockNumber
       }
     }
+  },
+
+  LoanBidsRejected(params) {
+    return {
+      event: 'LoanBidsRejected',
+      args: {
+        uuid: params.uuid,
+        borrower: params.borrower,
+        blockNumber: params.blockNumber
+      }
+    }
   }
 }
