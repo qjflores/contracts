@@ -44,5 +44,18 @@ module.exports = {
         blockNumber: params.blockNumber
       }
     }
+  },
+
+  ValueRedeemed(params) {
+    return {
+      event: 'ValueRedeemed',
+      args: {
+        uuid: params.uuid,
+        investor: params.investor,
+        recipient: params.recipient,
+        value: params.value,
+        blockNumber: params.blockNumber
+      }
+    }
   }
 }

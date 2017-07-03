@@ -56,17 +56,17 @@ contract Loan {
     uint _timestamp
   );
 
-  event InvestmentRedeemed(
-    bytes32 indexed _uuid,
-    address indexed _investor,
-    address indexed _recipient,
-    uint _value,
-    uint _timestamp
-  );
-
   event LoanBidsRejected(
     bytes32 indexed uuid,
     address indexed borrower,
+    uint blockNumber
+  );
+
+  event ValueRedeemed(
+    bytes32 indexed uuid,
+    address indexed investor,
+    address indexed recipient,
+    uint value,
     uint blockNumber
   );
 
@@ -130,7 +130,7 @@ contract Loan {
     */
     loans[uuid].principal = principal;
     loans[uuid].attestorFee = attestorFee;
-    loans[uuid].token.totalSupply = principal + attestorFee;
+    loans[uuid].token.totalSupply = principal;
 
     /*
       Data points evaluated by clients off chain in making investment decisions
@@ -328,7 +328,7 @@ contract Loan {
     loans[uuid].token.redeemValue(uuid, recipient);
   }
 
-  function getRedeemableValue(bytes32 uuid) returns (uint) {
-    return loans[uuid].token.redeemableValue;
+  function getRedeemableValue(bytes32 uuid, address investor) returns (uint) {
+    return loans[uuid].token.getRedeemableValue(investor);
   }
 }

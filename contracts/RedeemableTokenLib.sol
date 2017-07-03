@@ -11,10 +11,29 @@ import './SafeMath.sol';
 library RedeemableTokenLib {
   using SafeMath for uint;
 
-  event Transfer(bytes32 indexed _uuid, address _from, address indexed _to, uint _value, uint _timestamp);
-  event Approval(bytes32 indexed _uuid, address indexed _owner, address _spender, uint _value, uint _timestamp);
-  event InvestmentRedeemed(bytes32 indexed _uuid,
-      address indexed _investor, address indexed _recipient, uint _value, uint _timestamp);
+  event Transfer(
+    bytes32 indexed uuid,
+    address from,
+    address indexed to,
+    uint value,
+    uint timestamp
+  );
+
+  event Approval(
+    bytes32 indexed _uuid,
+    address indexed _owner,
+    address _spender,
+    uint _value,
+    uint _timestamp
+  );
+
+  event ValueRedeemed(
+    bytes32 indexed uuid,
+    address indexed investor,
+    address indexed recipient,
+    uint value,
+    uint blockNumber
+  );
 
   struct Accounting {
     uint totalSupply;
@@ -25,7 +44,7 @@ library RedeemableTokenLib {
     // The current total amount of redeemable tokens that have to-date
     // become available in the contract -- this includes tokens that
     // have already been redeemed.
-    uint redeemableValue;
+    uint totalValueAccrued;
     // Amount of tokens redeemed to date by each investor
     mapping (address => uint) balanceRedeemed;
   }
@@ -111,19 +130,22 @@ library RedeemableTokenLib {
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
   function redeemValue(Accounting storage self, bytes32 uuid, address recipient) {
-    uint investorEntitledTo = balanceOf(self, msg.sender)
-                                  .mul(self.redeemableValue)
-                                  .div(self.totalSupply);
+    uint redeemableValue = getRedeemableValue(self, msg.sender);
 
-    uint remainingBalance = investorEntitledTo - self.balanceRedeemed[msg.sender];
-
-    if (remainingBalance == 0)
+    if (redeemableValue == 0)
       throw;
 
-    self.balanceRedeemed[msg.sender] = self.balanceRedeemed[msg.sender].add(remainingBalance);
-    if (!recipient.send(remainingBalance))
+    self.balanceRedeemed[msg.sender] =
+      self.balanceRedeemed[msg.sender].add(redeemableValue);
+
+    if (!recipient.send(redeemableValue))
       throw;
 
-    InvestmentRedeemed(uuid, msg.sender, recipient, remainingBalance, block.timestamp);
+    ValueRedeemed(uuid, msg.sender, recipient, redeemableValue, block.number);
+  }
+
+  function getRedeemableValue(Accounting storage self, address investor) returns (uint) {
+    return balanceOf(self, investor).mul(self.totalValueAccrued)
+            .div(self.totalSupply).sub(self.balanceRedeemed[investor]);
   }
 }

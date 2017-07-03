@@ -96,7 +96,6 @@ library LoanLib {
     uint256 reviewPeriodEndBlock;
   }
 
-
   /*
       MODIFIERS
     ========================================================================
@@ -229,13 +228,13 @@ library LoanLib {
     if (msg.value == 0)
       throw;
 
-    self.token.redeemableValue = self.token.redeemableValue.add(msg.value);
+    self.token.totalValueAccrued = self.token.totalValueAccrued.add(msg.value);
 
     PeriodicRepayment(uuid, msg.sender, msg.value, block.number);
   }
 
   function getAmountRepaid(Loan storage self) returns (uint256) {
-    return self.token.redeemableValue;
+    return self.token.totalValueAccrued;
   }
 
   /**

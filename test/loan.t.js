@@ -4,7 +4,8 @@ import {web3, util} from './init.js';
 import {PERIOD_TYPE, LOAN_STATE} from './utils/Constants.js';
 import LoanFactory from './utils/LoanFactory.js';
 import {LoanCreated, LoanTermBegin,
-  LoanBidsRejected, PeriodicRepayment} from './utils/LoanEvents.js'
+  LoanBidsRejected, PeriodicRepayment,
+  ValueRedeemed} from './utils/LoanEvents.js'
 import expect from 'expect.js';
 import Random from 'random-js';
 
@@ -770,12 +771,181 @@ contract("Loan", (accounts) => {
   })
 
   describe('RedeemableToken', () => {
-    describe('getRedeemableValue()', () => {
+    let redeemableTokenTestLoan = _.cloneDeep(LOAN_DATA);
+    const bids = [
+      {
+        bidder: INVESTORS[0],
+        amount: 0.2002,
+        minInterestRate: 0.1
+      },
+      {
+        bidder: INVESTORS[1],
+        amount: 0.8008,
+        minInterestRate: 0.1
+      }
+    ]
+    const acceptedBids = [
+      {
+        bidder: INVESTORS[0],
+        amount: 0.2002,
+      },
+      {
+        bidder: INVESTORS[1],
+        amount: 0.8008,
+      }
+    ]
+
+    before(async () => {
+      redeemableTokenTestLoan.uuid = web3.sha3(uuidV4());
+      await loanFactory.generateAcceptedStateLoan(redeemableTokenTestLoan,
+        bids, acceptedBids);
 
     })
 
-    describe('redeemValue()', () => {
+    describe("first repayment", async () => {
+      const expectedInvestorOneRedeemable = web3.toWei(0.1, 'ether');
+      const expectedInvestorTwoRedeemable = web3.toWei(0.4, 'ether');
 
+      before(async () => {
+        await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
+          { value: web3.toWei(0.5, 'ether') })
+      });
+
+      describe('getRedeemableValue() before', () => {
+        it('should retrieve correct values', async () => {
+          const investorOneRedeemable =
+            await loan.getRedeemableValue
+              .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
+          const investorTwoRedeemable =
+            await loan.getRedeemableValue
+              .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
+
+          expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
+            .to.be(true)
+          expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
+            .to.be(true)
+        })
+      })
+
+      describe('redeemValue()', () => {
+        it('should redeem the correct amount for investor 1', async () => {
+          const balanceBefore = web3.eth.getBalance(INVESTORS[0])
+          const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+            INVESTORS[0], { from: INVESTORS[0] });
+          const gasCosts = await util.getGasCosts(result);
+          const balanceAfter = web3.eth.getBalance(INVESTORS[0])
+          const amountRedeemed =
+            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+          expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
+
+          util.assertEventEquality(result.logs[0], ValueRedeemed({
+            uuid: redeemableTokenTestLoan.uuid,
+            investor: INVESTORS[0],
+            recipient: INVESTORS[0],
+            value: expectedInvestorOneRedeemable,
+            blockNumber: result.receipt.blockNumber
+          }))
+        })
+
+        it('should not let investor 1 redeem any more value', async () => {
+          try {
+            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+              INVESTORS[0], { from: INVESTORS[0] });
+            expect().fail("should throw error");
+          } catch (err) {
+            util.assertThrowMessage(err)
+          }
+        })
+      })
+    })
+
+    describe('second repayment', async () => {
+      const expectedInvestorOneRedeemable = web3.toWei(0.06, 'ether');
+      const expectedInvestorTwoRedeemable = web3.toWei(0.64, 'ether');
+
+      before(async () => {
+        await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
+          { value: web3.toWei(0.3, 'ether') })
+      });
+
+      describe('getRedeemableValue() before', () => {
+        it('should retrieve correct values', async () => {
+          const investorOneRedeemable =
+            await loan.getRedeemableValue
+              .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
+          const investorTwoRedeemable =
+            await loan.getRedeemableValue
+              .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
+
+          expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
+            .to.be(true)
+          expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
+            .to.be(true)
+        })
+      })
+
+      describe('redeemValue()', () => {
+        it('should redeem the correct amount for investor 1', async () => {
+          const balanceBefore = web3.eth.getBalance(INVESTORS[0])
+          const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+            INVESTORS[0], { from: INVESTORS[0] });
+          const gasCosts = await util.getGasCosts(result);
+          const balanceAfter = web3.eth.getBalance(INVESTORS[0])
+          const amountRedeemed =
+            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+          expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
+
+          util.assertEventEquality(result.logs[0], ValueRedeemed({
+            uuid: redeemableTokenTestLoan.uuid,
+            investor: INVESTORS[0],
+            recipient: INVESTORS[0],
+            value: expectedInvestorOneRedeemable,
+            blockNumber: result.receipt.blockNumber
+          }))
+        })
+
+        it('should not let investor 1 redeem any more value', async () => {
+          try {
+            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+              INVESTORS[0], { from: INVESTORS[0] });
+            expect().fail("should throw error");
+          } catch (err) {
+            util.assertThrowMessage(err)
+          }
+        })
+
+        it('should redeem the correct amount for investor 2', async () => {
+          const balanceBefore = web3.eth.getBalance(INVESTORS[1])
+          const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+            INVESTORS[1], { from: INVESTORS[1] });
+          const gasCosts = await util.getGasCosts(result);
+          const balanceAfter = web3.eth.getBalance(INVESTORS[1])
+          const amountRedeemed =
+            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+          expect(amountRedeemed.equals(expectedInvestorTwoRedeemable)).to.be(true);
+
+          util.assertEventEquality(result.logs[0], ValueRedeemed({
+            uuid: redeemableTokenTestLoan.uuid,
+            investor: INVESTORS[1],
+            recipient: INVESTORS[1],
+            value: expectedInvestorTwoRedeemable,
+            blockNumber: result.receipt.blockNumber
+          }))
+        })
+
+        it('should not let investor 2 redeem any more value', async () => {
+          try {
+            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+              INVESTORS[1], { from: INVESTORS[1] });
+            expect().fail("should throw error");
+          } catch (err) {
+            util.assertThrowMessage(err)
+          }
+        })
+      });
     })
   })
 
