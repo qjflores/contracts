@@ -11,7 +11,14 @@ pragma solidity ^0.4.8;
 
 contract VersionRegister {
   mapping (bytes32 => address) versionMapping;
-  bytes32 public currentVersion;
+
+  struct Version {
+    uint major;
+    uint minor;
+    uint patch;
+  }
+
+  Version public currentVersion;
   address public owner;
 
   modifier onlyOwner() {
@@ -24,17 +31,17 @@ contract VersionRegister {
     owner = msg.sender;
   }
 
-  function getContractByVersion(bytes32 versionHash) returns (address) {
-    return versionMapping[versionHash];
+  function getContractByVersion(uint major, uint minor, uint patch) returns (address) {
+    return versionMapping[sha3(major, minor, patch)];
   }
 
-  function updateCurrentVersion(bytes32 versionHash) onlyOwner {
-    currentVersion = versionHash;
+  function updateCurrentVersion(uint major, uint minor, uint patch) onlyOwner {
+    currentVersion = Version(major, minor, patch);
   }
 
-  function updateVersionMapping(bytes32 versionHash, address contractAddress)
+  function updateVersionMapping(uint major, uint minor, uint patch, address contractAddress)
     onlyOwner
   {
-    versionMapping[versionHash] = contractAddress;
+    versionMapping[sha3(major, minor, patch)] = contractAddress;
   }
 }

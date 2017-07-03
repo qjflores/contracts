@@ -6,6 +6,7 @@ var RedeemableTokenLib = artifacts.require("./RedeemableTokenLib.sol");
 var LoanLib = artifacts.require('./LoanLib.sol');
 var Loan = artifacts.require("./Loan.sol");
 var Metadata = require("../ethpm.json");
+var semver = require('semver');
 
 module.exports = function(deployer, network, accounts) {
   deployer.deploy(SafeMath);
@@ -20,7 +21,11 @@ module.exports = function(deployer, network, accounts) {
   deployer.link(RedeemableTokenLib, Loan);
 
   let versionRegister;
-  const versionHash = web3.sha3(Metadata.version);
+  const version = {
+    major: semver.major(Metadata.version),
+    minor: semver.minor(Metadata.version),
+    patch: semver.patch(Metadata.version)
+  }
 
   deployer.deploy(Loan).then(function() {
     return deployer.deploy(VersionRegister);
@@ -28,8 +33,8 @@ module.exports = function(deployer, network, accounts) {
     return VersionRegister.deployed();
   }).then(function(_versionRegister) {
     versionRegister = _versionRegister;
-    return versionRegister.updateCurrentVersion(versionHash)
+    return versionRegister.updateCurrentVersion(version.major, version.minor, version.patch)
   }).then(function(result) {
-    return versionRegister.updateVersionMapping(versionHash, Loan.address)
+    return versionRegister.updateVersionMapping(version.major, version.minor, version.patch, Loan.address)
   });
 };
