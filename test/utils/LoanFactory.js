@@ -4,6 +4,10 @@ import _ from 'lodash';
 import Random from 'random-js';
 
 class LoanFactory {
+  constructor(contract) {
+    this.contract = contract;
+  }
+
   static generateSignedLoan(loan) {
     const terms = LoanFactory._generateTermsByteString(loan.terms);
     let unsignedLoan = _.cloneDeep(loan);
@@ -21,66 +25,48 @@ class LoanFactory {
     return signedLoan;
   }
 
-  static async generateLoanAtState(loan, contract, state, _bidders, _bids) {
-    const signedLoan = await this.generateSignedLoan(loan);
+  async generateAuctionStateLoan(loan, auctionLength, reviewPeriod) {
+    const signedLoan = LoanFactory.generateSignedLoan(loan);
+    await this.contract.createLoan(
+      signedLoan.uuid,
+      signedLoan.borrower,
+      signedLoan.principal,
+      signedLoan.terms,
+      signedLoan.attestor,
+      signedLoan.attestorFee,
+      signedLoan.defaultRisk,
+      signedLoan.signature.r,
+      signedLoan.signature.s,
+      signedLoan.signature.v,
+      auctionLength,
+      reviewPeriod
+    );
+  }
 
-    let instance;
-    let bidders = _bidders || [signedLoan.attestor];
-
-    if (state >= 0) {
-      instance = await contract.createLoan(
-        signedLoan.uuid,
-        signedLoan.borrower,
-        signedLoan.principal,
-        signedLoan.terms,
-        signedLoan.attestor,
-        signedLoan.attestorFee,
-        signedLoan.defaultRisk,
-        signedLoan.signature.r,
-        signedLoan.signature.s,
-        signedLoan.signature.v,
-        bidders.length,
-        bidders.length
-      );
-    }
-
-    if (state > 0) {
-      for (let i = 0; i < bidders.length; i++) {
-        let amount;
-        let minInterestRate;
-
-        if (_bids) {
-          amount = _bids[i].amount;
-          minInterestRate = _bids[i].minInterestRate;
-        } else {
-          amount = _bidders ? Random().real(0.2, 0.3) : 1;
-          minInterestRate = Random().real(0.1, 0.2);
-        }
-
-        await contract.bid(
-          signedLoan.uuid,
-          bidders[i],
-          web3.toWei(minInterestRate, 'ether'),
-          { value: web3.toWei(amount, 'ether') }
-        )
-      }
-    }
-
-    if (state == 2) {
-      await contract.acceptBids(
-        signedLoan.uuid,
-        bidders.slice(0, 5),
-        [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-         web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-         web3.toWei(0.2, 'ether')]
+  async generateReviewStateLoan(loan, bids) {
+    await this.generateAuctionStateLoan(loan, bids.length, 100);
+    for (let i = 0; i < bids.length; i++) {
+      await this.contract.bid(
+        loan.uuid,
+        bids[i].bidder,
+        web3.toWei(bids[i].minInterestRate, 'ether'),
+        { value: web3.toWei(bids[i].amount, 'ether') }
       )
     }
+  }
 
-    if (state == 3) {
-      await contract.rejectBids(signedLoan.uuid);
-    }
+  async generateAcceptedStateLoan(loan, bids, acceptedBids) {
+    await this.generateReviewStateLoan(loan, bids);
+    await this.contract.acceptBids(
+      loan.uuid,
+      acceptedBids.map((bid) => { return bid.bidder }),
+      acceptedBids.map((bid) => { return web3.toWei(bid.amount, 'ether') })
+    )
+  }
 
-    return loan;
+  async generateRejectedStateLoan(loan, bids) {
+    await this.generateReviewStateLoan(loan, bids);
+    await this.contract.rejectBids(loan.uuid);
   }
 
   static _generateTermsByteString(terms) {

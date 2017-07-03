@@ -48,8 +48,13 @@ library LoanLib {
   /**
    EVENTS
   */
-  event PeriodicRepayment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
-  event Investment(bytes32 indexed _uuid, address indexed _from, uint _value, uint _timestamp);
+  event PeriodicRepayment(
+    bytes32 indexed uuid,
+    address indexed from,
+    uint value,
+    uint blockNumber
+  );
+
   event LoanTermBegin(
     bytes32 indexed uuid,
     address indexed borrower,
@@ -141,16 +146,32 @@ library LoanLib {
     uint256 totalBalanceAccepted = 0;
 
     for (uint8 i = 0; i < bidders.length; i++) {
-      self.bids[bidders[i]].amount = self.bids[bidders[i]].amount.sub(bidAmounts[i]);
-      self.token.balances[bidders[i]] = bidAmounts[i];
+      // Subtract the amount accepted by the borrower from the bid amount
+      self.bids[bidders[i]].amount =
+        self.bids[bidders[i]].amount.sub(bidAmounts[i]);
+
+      // The price of 1 token in Wei is calculated as
+      //      (principal + attestorFee) / principal
+      // Hence, we calculate the amount of tokens alloted to an investor as
+      //      amountInvested / price
+      //          = amountInvested * principal / (principal + attestorFee)
+      self.token.balances[bidders[i]] =
+        bidAmounts[i]
+          .mul(self.principal)
+          .div(self.principal.add(self.attestorFee));
+
       totalBalanceAccepted = totalBalanceAccepted.add(bidAmounts[i]);
     }
 
-    if (totalBalanceAccepted != self.principal) {
+    if (totalBalanceAccepted != self.principal + self.attestorFee) {
       throw;
     }
 
     if (!self.borrower.send(self.principal)) {
+      throw;
+    }
+
+    if (!self.attestor.send(self.attestorFee)) {
       throw;
     }
 
@@ -202,13 +223,19 @@ library LoanLib {
    * @dev Method used by borrowers to make repayments to the loan contract
    *  at the end of each of payment period.
    */
-  function periodicRepayment(Loan storage self, bytes32 uuid) {
+  function periodicRepayment(Loan storage self, bytes32 uuid)
+    assert(isLoanState(self, LoanState.Accepted))
+  {
     if (msg.value == 0)
       throw;
 
     self.token.redeemableValue = self.token.redeemableValue.add(msg.value);
 
-    PeriodicRepayment(uuid, msg.sender, msg.value, block.timestamp);
+    PeriodicRepayment(uuid, msg.sender, msg.value, block.number);
+  }
+
+  function getAmountRepaid(Loan storage self) returns (uint256) {
+    return self.token.redeemableValue;
   }
 
   /**

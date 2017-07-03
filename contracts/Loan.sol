@@ -20,22 +20,17 @@ contract Loan {
    * EVENTS
    */
   event PeriodicRepayment(
-    bytes32 indexed _uuid,
-    address indexed _from,
-    uint _value, uint _timestamp
-  );
-
-  event Investment(
-    bytes32 indexed _uuid,
-    address indexed _from,
-    uint _value,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address indexed from,
+    uint value,
+    uint blockNumber
   );
 
   event LoanTermBegin(
-    bytes32 indexed _uuid,
-    address indexed _borrower,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address indexed borrower,
+    address[] investors,
+    uint blockNumber
   );
 
   event LoanCreated(
@@ -253,6 +248,10 @@ contract Loan {
 
   function getBid(bytes32 uuid, uint256 index) returns (address, uint256, uint256) {
     return loans[uuid].getBid(index);
+  }
+
+  function getAmountRepaid(bytes32 uuid) returns (uint256) {
+    return loans[uuid].getAmountRepaid();
   }
 
   /**

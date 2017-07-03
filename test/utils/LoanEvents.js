@@ -32,5 +32,17 @@ module.exports = {
         blockNumber: params.blockNumber
       }
     }
+  },
+
+  PeriodicRepayment(params) {
+    return {
+      event: 'PeriodicRepayment',
+      args: {
+        uuid: params.uuid,
+        from: params.from,
+        value: params.value,
+        blockNumber: params.blockNumber
+      }
+    }
   }
 }
