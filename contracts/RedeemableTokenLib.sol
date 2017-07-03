@@ -16,15 +16,15 @@ library RedeemableTokenLib {
     address from,
     address indexed to,
     uint value,
-    uint timestamp
+    uint blockNumber
   );
 
   event Approval(
-    bytes32 indexed _uuid,
-    address indexed _owner,
-    address _spender,
-    uint _value,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address indexed owner,
+    address spender,
+    uint value,
+    uint blockNumber
   );
 
   event ValueRedeemed(
@@ -67,7 +67,7 @@ library RedeemableTokenLib {
   function transfer(Accounting storage self, bytes32 uuid, address _to, uint _value) onlyPayloadSize(2 * 32) {
     self.balances[msg.sender] = self.balances[msg.sender].sub(_value);
     self.balances[_to] = self.balances[_to].add(_value);
-    Transfer(uuid, msg.sender, _to, _value, block.timestamp);
+    Transfer(uuid, msg.sender, _to, _value, block.number);
   }
 
   /**
@@ -94,7 +94,7 @@ library RedeemableTokenLib {
     self.balances[_to] = self.balances[_to].add(_value);
     self.balances[_from] = self.balances[_from].sub(_value);
     self.allowed[_from][msg.sender] = _allowance.sub(_value);
-    Transfer(uuid, _from, _to, _value, block.timestamp);
+    Transfer(uuid, _from, _to, _value, block.number);
   }
 
   /**
@@ -111,7 +111,7 @@ library RedeemableTokenLib {
     if ((_value != 0) && (self.allowed[msg.sender][_spender] != 0)) throw;
 
     self.allowed[msg.sender][_spender] = _value;
-    Approval(uuid, msg.sender, _spender, _value, block.timestamp);
+    Approval(uuid, msg.sender, _spender, _value, block.number);
   }
 
   /**

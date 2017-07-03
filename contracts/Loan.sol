@@ -41,19 +41,19 @@ contract Loan {
   );
 
   event Transfer(
-    bytes32 indexed _uuid,
-    address _from,
-    address indexed _to,
-    uint _value,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address from,
+    address indexed to,
+    uint value,
+    uint blockNumber
   );
 
   event Approval(
-    bytes32 indexed _uuid,
-    address indexed _owner,
-    address _spender,
-    uint _value,
-    uint _timestamp
+    bytes32 indexed uuid,
+    address indexed owner,
+    address spender,
+    uint value,
+    uint blockNumber
   );
 
   event LoanBidsRejected(

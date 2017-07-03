@@ -57,5 +57,31 @@ module.exports = {
         blockNumber: params.blockNumber
       }
     }
+  },
+
+  Transfer(params) {
+    return {
+      event: 'Transfer',
+      args: {
+        uuid: params.uuid,
+        from: params.from,
+        to: params.to,
+        value: params.value,
+        blockNumber: params.blockNumber
+      }
+    }
+  },
+
+  Approval(params) {
+    return {
+      event: 'Approval',
+      args: {
+        uuid: params.uuid,
+        owner: params.owner,
+        spender: params.spender,
+        value: params.value,
+        blockNumber: params.blockNumber
+      }
+    }
   }
 }

@@ -5,7 +5,7 @@ import {PERIOD_TYPE, LOAN_STATE} from './utils/Constants.js';
 import LoanFactory from './utils/LoanFactory.js';
 import {LoanCreated, LoanTermBegin,
   LoanBidsRejected, PeriodicRepayment,
-  ValueRedeemed} from './utils/LoanEvents.js'
+  ValueRedeemed, Transfer, Approval} from './utils/LoanEvents.js'
 import expect from 'expect.js';
 import Random from 'random-js';
 
@@ -950,24 +950,162 @@ contract("Loan", (accounts) => {
   })
 
   describe('ERC20', () => {
-    describe('#transfer()', () => {
+    let erc20TestLoan = _.cloneDeep(LOAN_DATA);
+    const bids = [
+      {
+        bidder: INVESTORS[0],
+        amount: 0.2002,
+        minInterestRate: 0.1
+      },
+      {
+        bidder: INVESTORS[1],
+        amount: 0.8008,
+        minInterestRate: 0.1
+      }
+    ]
+    const acceptedBids = [
+      {
+        bidder: INVESTORS[0],
+        amount: 0.2002,
+      },
+      {
+        bidder: INVESTORS[1],
+        amount: 0.8008,
+      }
+    ]
 
+    before(async () => {
+      erc20TestLoan.uuid = web3.sha3(uuidV4());
+      await loanFactory.generateAcceptedStateLoan(erc20TestLoan, bids, acceptedBids);
     })
 
     describe('#balanceOf()', () => {
+      it('should expose the balanceOf endpoint', async () => {
+        const expectedInvestorOneBalance = web3.toWei(0.2, 'ether');
+        const expectedInvestorTwoBalance = web3.toWei(0.8, 'ether');
 
+        const investorOneBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[0]);
+        const investorTwoBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[1]);
+
+        expect(investorOneBalance.equals(expectedInvestorOneBalance)).to.be(true)
+        expect(investorTwoBalance.equals(expectedInvestorTwoBalance)).to.be(true)
+      })
     })
 
-    describe('#approve()', () => {
+    describe('#transfer()', () => {
+      it('should allow a token holder to transfer their balance', async () => {
+        const result = await loan.transfer(erc20TestLoan.uuid,
+          INVESTORS[1], web3.toWei(0.1, 'ether'), { from: INVESTORS[0] })
 
-    })
+        const expectedInvestorOneBalance = web3.toWei(0.1, 'ether');
+        const expectedInvestorTwoBalance = web3.toWei(0.9, 'ether');
 
-    describe('#transferFrom()', () => {
+        const investorOneBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[0]);
+        const investorTwoBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[1]);
 
+        expect(investorOneBalance.equals(expectedInvestorOneBalance)).to.be(true)
+        expect(investorTwoBalance.equals(expectedInvestorTwoBalance)).to.be(true)
+
+        util.assertEventEquality(result.logs[0], Transfer({
+          uuid: erc20TestLoan.uuid,
+          from: INVESTORS[0],
+          to: INVESTORS[1],
+          value: web3.toWei(0.1, 'ether'),
+          blockNumber: result.receipt.blockNumber
+        }))
+      })
+
+      it('should not let holder transfer balance they do not have', async () => {
+        try {
+          await loan.transfer(erc20TestLoan.uuid,
+            INVESTORS[1], web3.toWei(0.2, 'ether'), { from: INVESTORS[0] })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
     })
 
     describe('#allowance()', () => {
+      it('should expose the allowance endpoint', async () => {
+        const allowance =
+          await loan.allowance(erc20TestLoan.uuid, INVESTORS[0], INVESTORS[1])
+        expect(allowance.equals(0)).to.be(true);
+      })
+    })
 
+    describe('#approve()', () => {
+      it('should allow investor to approve usage of their funds', async () => {
+        const result = await loan.approve(
+          erc20TestLoan.uuid,
+          INVESTORS[0],
+          web3.toWei(0.4, 'ether'),
+          { from: INVESTORS[1] }
+        )
+
+        const allowance =
+          await loan.allowance(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0])
+
+        expect(allowance.equals(web3.toWei(0.4, 'ether'))).to.be(true);
+
+        util.assertEventEquality(result.logs[0], Approval({
+          uuid: erc20TestLoan.uuid,
+          owner: INVESTORS[1],
+          spender: INVESTORS[0],
+          value: web3.toWei(0.4, 'ether'),
+          blockNumber: result.receipt.blockNumber
+        }))
+      })
+    })
+
+    describe('#transferFrom()', () => {
+      it("should allow user to transfer from other user's approved funds", async () => {
+        const result = await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0],
+          web3.toWei(0.2, 'ether'), { from : INVESTORS[0] });
+
+        const expectedInvestorOneBalance = web3.toWei(0.3, 'ether');
+        const expectedInvestorTwoBalance = web3.toWei(0.7, 'ether');
+
+        const investorOneBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[0]);
+        const investorTwoBalance =
+          await loan.balanceOf.call(erc20TestLoan.uuid, INVESTORS[1]);
+
+        expect(investorOneBalance.equals(expectedInvestorOneBalance)).to.be(true)
+        expect(investorTwoBalance.equals(expectedInvestorTwoBalance)).to.be(true)
+
+        util.assertEventEquality(result.logs[0], Transfer({
+          uuid: erc20TestLoan.uuid,
+          from: INVESTORS[1],
+          to: INVESTORS[0],
+          value: web3.toWei(0.2, 'ether'),
+          blockNumber: result.receipt.blockNumber
+        }))
+      })
+
+      it("should throw if user tries transfering from other user's unapproved funds", async () => {
+        try {
+          await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[2], INVESTORS[0],
+            web3.toWei(0.2, 'ether'), { from : INVESTORS[0] });
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+
+      it('should throw if user tries transfering more than they are approved', async () => {
+        try {
+          await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0],
+            web3.toWei(0.3, 'ether'), { from : INVESTORS[0] });
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
     })
   })
 })
