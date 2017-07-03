@@ -18,6 +18,10 @@ library LoanLib {
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
   enum LoanState { Auction, Review, Accepted, Rejected }
 
+  /*
+      MODIFIERS
+    ========================================================================
+  */
   function isLoanState(Loan storage self, LoanState state) returns (bool) {
     updateCurrentLoanState(self);
     return self.state == state;
@@ -87,29 +91,12 @@ library LoanLib {
     address attestor;
     uint256 attestorFee;
     uint256 defaultRisk;
-    uint256 totalInvested;
     uint256 interestRate;
     bytes32 r;
     bytes32 s;
     uint8 v;
     uint256 auctionEndBlock;
     uint256 reviewPeriodEndBlock;
-  }
-
-  /*
-      MODIFIERS
-    ========================================================================
-  */
-  function duringAuctionPeriod(Loan storage self) returns (bool duringAuctionPeriod) {
-    return (self.state == LoanState.Auction);
-  }
-
-  function beforeLoanFunded(Loan storage self) returns (bool beforeLoanFunded) {
-    return (self.totalInvested < self.token.totalSupply);
-  }
-
-  function afterLoanFunded(Loan storage self) returns (bool afterLoanFunded) {
-    return (self.totalInvested == self.token.totalSupply);
   }
 
   function bid(Loan storage self, address tokenRecipient, uint256 minInterestRate)
@@ -160,6 +147,9 @@ library LoanLib {
           .div(self.principal.add(self.attestorFee));
 
       totalBalanceAccepted = totalBalanceAccepted.add(bidAmounts[i]);
+
+      if (self.bids[bidders[i]].minInterestRate > self.interestRate)
+        self.interestRate = self.bids[bidders[i]].minInterestRate;
     }
 
     if (totalBalanceAccepted != self.principal + self.attestorFee) {

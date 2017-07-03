@@ -203,8 +203,8 @@ contract Loan {
     return (loans[uuid].r, loans[uuid].s, loans[uuid].v);
   }
 
-  function getTotalInvested(bytes32 uuid) returns (uint) {
-    return loans[uuid].totalInvested;
+  function getInterestRate(bytes32 uuid) returns (uint256) {
+    return loans[uuid].interestRate;
   }
 
   function getTotalSupply(bytes32 uuid) returns (uint) {

@@ -413,6 +413,14 @@ contract("Loan", (accounts) => {
 
       let nonInvestorBalance = await loan.balanceOf(LOAN.uuid, INVESTORS[5])
       expect(nonInvestorBalance.equals(0)).to.be(true);
+
+      const acceptedBidsInterestRates =
+        INVESTORS.slice(0, 5)
+          .map((investor) => { return bids[investor].minInterestRate })
+
+      const expectedInterestRate = web3.BigNumber.max(acceptedBidsInterestRates)
+      const acceptedInterestRate = await loan.getInterestRate.call(LOAN.uuid)
+      expect(expectedInterestRate.equals(acceptedInterestRate)).to.be(true);
     })
 
     it('should throw if borrower tries to reject after accepting', async () => {
