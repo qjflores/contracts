@@ -1,6 +1,7 @@
 import stringify from 'json-stable-stringify';
 import util from './Util';
 import _ from 'lodash';
+import Random from 'random-js';
 
 class LoanFactory {
   static generateSignedLoan(loan) {
@@ -20,10 +21,11 @@ class LoanFactory {
     return signedLoan;
   }
 
-  static async generateLoanAtState(loan, contract, state) {
+  static async generateLoanAtState(loan, contract, state, _bidders, _bids) {
     const signedLoan = await this.generateSignedLoan(loan);
 
     let instance;
+    let bidders = _bidders || [signedLoan.attestor];
 
     if (state >= 0) {
       instance = await contract.createLoan(
@@ -37,26 +39,40 @@ class LoanFactory {
         signedLoan.signature.r,
         signedLoan.signature.s,
         signedLoan.signature.v,
-        1,
-        1
+        bidders.length,
+        bidders.length
       );
     }
 
     if (state > 0) {
-      await contract.bid(
-        signedLoan.uuid,
-        signedLoan.attestor,
-        web3.toWei(0.1, 'ether'),
-        { value: signedLoan.principal }
-      )
+      for (let i = 0; i < bidders.length; i++) {
+        let amount;
+        let minInterestRate;
 
+        if (_bids) {
+          amount = _bids[i].amount;
+          minInterestRate = _bids[i].minInterestRate;
+        } else {
+          amount = _bidders ? Random().real(0.2, 0.3) : 1;
+          minInterestRate = Random().real(0.1, 0.2);
+        }
+
+        await contract.bid(
+          signedLoan.uuid,
+          bidders[i],
+          web3.toWei(minInterestRate, 'ether'),
+          { value: web3.toWei(amount, 'ether') }
+        )
+      }
     }
 
     if (state == 2) {
       await contract.acceptBids(
         signedLoan.uuid,
-        [signedLoan.attestor],
-        [signedLoan.principal]
+        bidders.slice(0, 5),
+        [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+         web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+         web3.toWei(0.2, 'ether')]
       )
     }
 

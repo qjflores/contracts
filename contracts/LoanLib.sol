@@ -18,19 +18,31 @@ library LoanLib {
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
   enum LoanState { Auction, Review, Accepted, Rejected }
 
-  modifier onlyLoanState(Loan storage self, LoanState state) {
+  function isLoanState(Loan storage self, LoanState state) returns (bool) {
     updateCurrentLoanState(self);
-    if (self.state != state) {
+    return self.state == state;
+  }
+
+  modifier assert(bool condition) {
+    if (!condition) {
       throw;
     }
     _;
   }
 
-  modifier onlyBorrower(Loan storage self) {
-    if (msg.sender != self.borrower) {
+  modifier assertOr(bool conditionOne, bool conditionTwo) {
+    if (!conditionOne && !conditionTwo){
       throw;
     }
     _;
+  }
+
+  function fromBorrower(Loan storage self) returns (bool) {
+    return msg.sender == self.borrower;
+  }
+
+  function fromBidder(Loan storage self) returns (bool) {
+    return self.bids[msg.sender].investor == msg.sender;
   }
 
   /**
@@ -96,9 +108,9 @@ library LoanLib {
     return (self.totalInvested == self.token.totalSupply);
   }
 
-  function bid(Loan storage self, address tokenRecipient, uint256 minInterestRate) {
-    updateCurrentLoanState(self);
-    assertLoanState(self, LoanState.Auction);
+  function bid(Loan storage self, address tokenRecipient, uint256 minInterestRate)
+    assert(isLoanState(self, LoanState.Auction))
+    {
 
     if (msg.value == 0) {
       throw;
@@ -117,8 +129,8 @@ library LoanLib {
     bytes32 uuid,
     address[] bidders,
     uint256[] bidAmounts
-  ) onlyBorrower(self)
-    onlyLoanState(self, LoanState.Review)
+  ) assert(fromBorrower(self))
+    assert(isLoanState(self, LoanState.Review))
   {
 
     if (bidders.length > MAX_INVESTORS_PER_LOAN ||
@@ -148,8 +160,8 @@ library LoanLib {
   }
 
   function rejectBids(Loan storage self, bytes32 uuid)
-    onlyBorrower(self)
-    onlyLoanState(self, LoanState.Review)
+    assert(fromBorrower(self))
+    assert(isLoanState(self, LoanState.Review))
   {
     self.state = LoanState.Rejected;
     LoanBidsRejected(uuid, self.borrower, block.number);
@@ -172,16 +184,18 @@ library LoanLib {
    *    their deposited ether from the contract.  If the contract is fully
    *    emptied out, the contract self destructs.
    */
-  function withdrawInvestment(Loan storage self) {
-    uint investmentRefund = self.token.balanceOf(msg.sender);
-    self.token.balances[msg.sender] = 0;
-
-    self.totalInvested = self.totalInvested.sub(investmentRefund);
-    if (!msg.sender.send(investmentRefund))
+  function withdrawInvestment(Loan storage self)
+    assert(fromBidder(self))
+    assertOr(isLoanState(self, LoanState.Accepted), isLoanState(self, LoanState.Rejected))
+  {
+    if (self.bids[msg.sender].amount == 0)
       throw;
 
-    if (self.totalInvested == 0)
-      self.borrower = 0;
+    uint256 amount = self.bids[msg.sender].amount;
+    self.bids[msg.sender].amount = 0;
+
+    if (!msg.sender.send(amount))
+      throw;
   }
 
   /**
@@ -208,14 +222,6 @@ library LoanLib {
     return (self.token.balanceOf(owner) > 0);
   }
 
-  /**
-   * @dev Loan is considered fully funded when the desired principal is raised.
-   * @return bool: Whether the loan is fully funded.
-   */
-  function loanFullyFunded(Loan storage self) returns (bool funded) {
-    return (self.totalInvested >= self.token.totalSupply);
-  }
-
   function updateCurrentLoanState(Loan storage self) {
     if (block.number <= self.auctionEndBlock) {
       self.state = LoanState.Auction;
@@ -227,12 +233,6 @@ library LoanLib {
           self.state = LoanState.Rejected;
         }
       }
-    }
-  }
-
-  function assertLoanState(Loan storage self, LoanState state) internal {
-    if (self.state != state) {
-      throw;
     }
   }
 }

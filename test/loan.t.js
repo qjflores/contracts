@@ -402,11 +402,10 @@ contract("Loan", (accounts) => {
   })
 
   describe('#rejectBids()', () => {
-    let loanInReviewData;
+    let loanInReviewData = _.cloneDeep(LOAN_DATA);
     let loanInReview;
 
     beforeEach(async () => {
-      loanInReviewData = _.cloneDeep(LOAN_DATA);
       loanInReviewData.uuid = web3.sha3(uuidV4());
       loanInReview = await LoanFactory.generateLoanAtState(loanInReviewData,
         loan, LOAN_STATE.REVIEW);
@@ -440,7 +439,176 @@ contract("Loan", (accounts) => {
   })
 
   describe('#withdrawInvestment()', () => {
+    let withdrawalTestLoanData = _.cloneDeep(LOAN_DATA);
+    let withdrawalTestLoan;
 
+    describe('State: Auction', () => {
+      before(async () => {
+        withdrawalTestLoanData.uuid = web3.sha3(uuidV4());
+        withdrawalTestLoan = await LoanFactory.generateLoanAtState(withdrawalTestLoanData,
+          loan, LOAN_STATE.AUCTION, INVESTORS);
+
+        await loan.bid(
+          withdrawalTestLoan.uuid,
+          INVESTORS[0],
+          web3.toWei(0.1, 'ether'),
+          { value: web3.toWei(0.3, 'ether') }
+        )
+      })
+
+      it('should not allow auction non-participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[1] })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+
+      it('should not allow auction participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[0] })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+    })
+
+    describe('State: Review', () => {
+      before(async () => {
+        withdrawalTestLoanData.uuid = web3.sha3(uuidV4());
+        withdrawalTestLoan = await LoanFactory.generateLoanAtState(withdrawalTestLoanData,
+          loan, LOAN_STATE.REVIEW, INVESTORS);
+      })
+
+      it('should not allow auction non-participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: withdrawalTestLoan.attestor })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+
+      it('should not allow auction participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[0] })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+    })
+
+    describe('State: Accepted', () => {
+      let bids = [];
+      for (let i = 0; i < INVESTORS.length; i++) {
+        bids.push({
+          amount: Random().real(0.2, 0.3),
+          minInterestRate: Random().real(0.1, 0.2)
+        })
+      }
+
+      before(async () => {
+        withdrawalTestLoanData.uuid = web3.sha3(uuidV4());
+        withdrawalTestLoan = await LoanFactory.generateLoanAtState(withdrawalTestLoanData,
+          loan, LOAN_STATE.ACCEPTED, INVESTORS, bids);
+      })
+
+      it('should not allow auction non-participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: withdrawalTestLoan.attestor })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+
+      it('should allow auction participants to withdraw', async () => {
+        for (let i = 0; i < INVESTORS.length; i++) {
+          const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
+          const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[i] })
+          const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
+          const gasCosts = await util.getGasCosts(result);
+          const investmentAmount = i < 5 ? web3.toBigNumber(0.2) : 0;
+          const expectedRefundInEther =
+            web3.toBigNumber(bids[i].amount).minus(investmentAmount)
+
+          expect(balanceAfter
+            .minus(balanceBefore)
+            .plus(gasCosts)
+            .equals(web3.toWei(expectedRefundInEther, 'ether'))).to.be(true);
+        }
+      })
+
+      it('should not allow auction participants to withdraw twice', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[0] })
+          expect().fail("should throw error")
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+    })
+
+    describe('State: Rejected', () => {
+      let bids = [];
+      for (let i = 0; i < INVESTORS.length; i++) {
+        bids.push({
+          amount: Random().real(0.2, 0.3),
+          minInterestRate: Random().real(0.1, 0.2)
+        })
+      }
+
+      before(async () => {
+        withdrawalTestLoanData.uuid = web3.sha3(uuidV4());
+        withdrawalTestLoan = await LoanFactory.generateLoanAtState(withdrawalTestLoanData,
+          loan, LOAN_STATE.REJECTED, INVESTORS, bids);
+      })
+
+      it('should not allow auction non-participants to withdraw', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: withdrawalTestLoan.attestor })
+          expect().fail("should throw error");
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+
+      it('should allow auction participants to withdraw', async () => {
+        for (let i = 0; i < INVESTORS.length; i++) {
+          const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
+          const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[i] })
+          const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
+          const gasCosts = await util.getGasCosts(result);
+
+          expect(balanceAfter
+            .minus(balanceBefore)
+            .plus(gasCosts)
+            .equals(web3.toWei(bids[i].amount, 'ether'))).to.be(true);
+        }
+      })
+
+      it('should not allow auction participants to withdraw twice', async () => {
+        try {
+          await loan.withdrawInvestment(withdrawalTestLoan.uuid,
+            { from: INVESTORS[0] })
+          expect().fail("should throw error")
+        } catch (err) {
+          util.assertThrowMessage(err);
+        }
+      })
+    })
   })
 
   describe('#periodicRepayment()', () => {
