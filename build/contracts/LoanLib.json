@@ -7,18 +7,88 @@
         {
           "name": "self",
           "type": "LoanLib.Loan storage"
+        }
+      ],
+      "name": "fromBidder",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
         },
         {
           "name": "uuid",
           "type": "bytes32"
         },
         {
-          "name": "tokenRecipient",
-          "type": "address"
+          "name": "bidders",
+          "type": "address[]"
+        },
+        {
+          "name": "bidAmounts",
+          "type": "uint256[]"
         }
       ],
-      "name": "fundLoan",
+      "name": "acceptBids",
       "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        },
+        {
+          "name": "uuid",
+          "type": "bytes32"
+        }
+      ],
+      "name": "rejectBids",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        }
+      ],
+      "name": "updateCurrentLoanState",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        }
+      ],
+      "name": "getNumBids",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "payable": false,
       "type": "function"
     },
@@ -67,13 +137,99 @@
         {
           "name": "self",
           "type": "LoanLib.Loan storage"
+        },
+        {
+          "name": "index",
+          "type": "uint256"
         }
       ],
-      "name": "afterLoanFunded",
+      "name": "getBid",
       "outputs": [
         {
-          "name": "afterLoanFunded",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        },
+        {
+          "name": "state",
+          "type": "LoanLib.LoanState"
+        }
+      ],
+      "name": "isLoanState",
+      "outputs": [
+        {
+          "name": "",
           "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "MAX_INVESTORS_PER_LOAN",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        },
+        {
+          "name": "tokenRecipient",
+          "type": "address"
+        },
+        {
+          "name": "minInterestRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "bid",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "self",
+          "type": "LoanLib.Loan storage"
+        }
+      ],
+      "name": "getAmountRepaid",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
         }
       ],
       "payable": false,
@@ -87,28 +243,10 @@
           "type": "LoanLib.Loan storage"
         }
       ],
-      "name": "loanFullyFunded",
+      "name": "fromBorrower",
       "outputs": [
         {
-          "name": "funded",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "self",
-          "type": "LoanLib.Loan storage"
-        }
-      ],
-      "name": "beforeLoanFunded",
-      "outputs": [
-        {
-          "name": "beforeLoanFunded",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -133,22 +271,22 @@
       "inputs": [
         {
           "indexed": true,
-          "name": "_uuid",
+          "name": "uuid",
           "type": "bytes32"
         },
         {
           "indexed": true,
-          "name": "_from",
+          "name": "from",
           "type": "address"
         },
         {
           "indexed": false,
-          "name": "_value",
+          "name": "value",
           "type": "uint256"
         },
         {
           "indexed": false,
-          "name": "_timestamp",
+          "name": "blockNumber",
           "type": "uint256"
         }
       ],
@@ -160,26 +298,26 @@
       "inputs": [
         {
           "indexed": true,
-          "name": "_uuid",
+          "name": "uuid",
           "type": "bytes32"
         },
         {
           "indexed": true,
-          "name": "_from",
+          "name": "borrower",
           "type": "address"
         },
         {
           "indexed": false,
-          "name": "_value",
-          "type": "uint256"
+          "name": "investors",
+          "type": "address[]"
         },
         {
           "indexed": false,
-          "name": "_timestamp",
+          "name": "blockNumber",
           "type": "uint256"
         }
       ],
-      "name": "Investment",
+      "name": "LoanTermBegin",
       "type": "event"
     },
     {
@@ -187,25 +325,25 @@
       "inputs": [
         {
           "indexed": true,
-          "name": "_uuid",
+          "name": "uuid",
           "type": "bytes32"
         },
         {
           "indexed": true,
-          "name": "_borrower",
+          "name": "borrower",
           "type": "address"
         },
         {
           "indexed": false,
-          "name": "_timestamp",
+          "name": "blockNumber",
           "type": "uint256"
         }
       ],
-      "name": "LoanTermBegin",
+      "name": "LoanBidsRejected",
       "type": "event"
     }
   ],
-  "unlinked_binary": "0x606060405234610000575b6105f8806100196000396000f300606060405236156100675763ffffffff60e060020a6000350416632671fa4b811461006c5780636329f3e9146100885780636c293625146100b357806385c22a23146100c3578063a0677750146100e2578063ccf1f93f14610101578063ef918c1514610120575b610000565b610086600435602435600160a060020a036044351661012d565b005b61009f600435600160a060020a03602435166102f3565b604080519115158252519081900360200190f35b610086600435602435610390565b005b61009f600435610419565b604080519115158252519081900360200190f35b61009f600435610427565b604080519115158252519081900360200190f35b61009f600435610436565b604080519115158252519081900360200190f35b610086600435610444565b005b60008034151561013c57610000565b600b85015485546101529163ffffffff61056d16565b915061015e8234610586565b600b860154909150610176908263ffffffff6105a016565b600b860155600160a060020a03831660009081526001860160205260409020546101a6908263ffffffff6105a016565b600160a060020a038416600081815260018801602090815260409182902093909355805184815242938101939093528051919287927fd7fe0183e01b521e9d0574ee3e33a2ed50a4534a16575f33d628e31b7e15833c929181900390910190a361020f85610427565b156102935760058501548554604051600160a060020a039092169181156108fc0291906000818181858888f19350505050151561024b57610000565b6005850154604080514281529051600160a060020a039092169186917f5cfe4187e5fd95a5f8f8ab667b0c976706cda4034f5c6d561a76ed97e0448398919081900360200190a35b60006102a5348363ffffffff61056d16565b11156102ea57600160a060020a0333166108fc6102c8348463ffffffff61056d16565b6040518115909202916000818181858888f1935050505015156102ea57610000565b5b5b5050505050565b60006102fe83610419565b80151561030a57610000565b6040805160006020918201819052825160e060020a6322f6003902815260048101889052600160a060020a03871660248201529251909273__RedeemableTokenLib____________________926322f6003992604480840193829003018186803b156100005760325a03f41561000057505050604051805190501191505b5b5092915050565b61039982610419565b8015156103a557610000565b3415156103b157610000565b60038301546103c6903463ffffffff6105a016565b6003840155604080513481524260208201528151600160a060020a0333169285927f49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22929081900390910190a35b5b505050565b8054600b820154145b919050565b8054600b82015410155b919050565b8054600b820154105b919050565b600061044f82610436565b80151561045b57610000565b604080516000602091820152815160e060020a6322f6003902815260048101869052600160a060020a0333166024820152915173__RedeemableTokenLib____________________926322f60039926044808301939192829003018186803b156100005760325a03f4156100005750506040805151600160a060020a03331660009081526001870160205291822091909155600b85015490935061050691508363ffffffff61056d16565b600b840155604051600160a060020a0333169083156108fc029084906000818181858888f19350505050151561053b57610000565b600b83015415156104135760058301805473ffffffffffffffffffffffffffffffffffffffff191690555b5b5b505050565b600061057b838311156105bc565b508082035b92915050565b60008183106105955781610597565b825b90505b92915050565b60008282016105b1848210156105bc565b8091505b5092915050565b8015156105c857610000565b5b505600a165627a7a72305820e7e672e6f285e27ef354b090e6c4a79b767dfd6b2a3c5e00d715cdb3946d09c50029",
+  "unlinked_binary": "0x606060405234610000575b610cd8806100196000396000f300606060405236156100b45763ffffffff60e060020a60003504166318ed160481146100b95780631a7d64a1146100d85780633840b6771461015e5780634cb3e1e81461016e5780635497799f1461017b5780636329f3e9146101985780636c293625146101c357806378277a02146101d3578063795a5a6a1461020957806383ef44c91461022e578063b99ca5e01461024c578063dba10d9f14610268578063ee21b0bc14610285578063ef918c15146102a4575b610000565b6100c46004356102b1565b604080519115158252519081900360200190f35b604080516044356004818101356020818102858101820190965281855261015c9583359560248035966064959294910192829185019084908082843750506040805187358901803560208181028481018201909552818452989a9989019892975090820195509350839250850190849080828437509496506102d795505050505050565b005b61015c600435602435610677565b005b61015c600435610704565b005b610186600435610797565b60408051918252519081900360200190f35b6100c4600435600160a060020a036024351661079f565b604080519115158252519081900360200190f35b61015c60043560243561083f565b005b6101e16004356024356108ca565b60408051600160a060020a039094168452602084019290925282820152519081900360600190f35b6100c460043560ff602435166109da565b604080519115158252519081900360200190f35b610236610a08565b6040805160ff9092168252519081900360200190f35b61015c600435600160a060020a0360243516604435610a0d565b005b610186600435610b3b565b60408051918252519081900360200190f35b6100c4600435610b46565b604080519115158252519081900360200190f35b61015c600435610b60565b005b600160a060020a033381166000818152600184016020526040902054909116145b919050565b600060006102e486610b46565b8015156102f057610000565b6102fb8760016109da565b80151561030757610000565b8551600a90118061031a57508451600a90115b1561032457610000565b60009350600092505b85518360ff1610156105325761039a858460ff1681518110156100005790602001906020020151896001016000898760ff168151811015610000576020908102909101810151600160a060020a03168252810191909152604001600020600101549063ffffffff610c2116565b886001016000888660ff168151811015610000576020908102909101810151600160a060020a0316825281019190915260400160002060010155600c880154600989015461042a916103f2919063ffffffff610c3a16565b61041e8a60090154888760ff16815181101561000057602090810290910101519063ffffffff610c5616565b9063ffffffff610c8216565b886003016001016000888660ff1681518110156100005790602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002081905550610497858460ff1681518110156100005760209081029091010151859063ffffffff610c3a16565b935087600e0154886001016000888660ff1681518110156100005790602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002060020154111561052657876001016000878560ff168151811015610000576020908102909101810151600160a060020a0316825281019190915260400160002060020154600e8901555b5b60019092019161032d565b600c880154600989015401841461054857610000565b60088801546009890154604051600160a060020a039092169181156108fc0291906000818181858888f19350505050151561058257610000565b600b880154600c890154604051600160a060020a039092169181156108fc0291906000818181858888f1935050505015156105bc57610000565b6002888101805460ff191690911790556008880154604080514360208083018290528383528a51938301939093528951600160a060020a03909416938b937fa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8938c939290918291606083019186810191028083838215610657575b80518252602083111561065757601f199092019160209182019101610637565b505050905001935050505060405180910390a35b5b505b50505050505050565b61068082610b46565b80151561068c57610000565b6106978360016109da565b8015156106a357610000565b600284018054600360ff199091161790556008840154604080514381529051600160a060020a039092169185917f0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47919081900360200190a35b5b505b505050565b601281015443116107205760028101805460ff19169055610790565b8060120154431115610790576002600282015460ff1660038111610000571415801561075c57506003600282015460ff16600381116100005714155b1561079057601381015443116107805760028101805460ff19166001179055610790565b60028101805460ff191660031790555b5b5b5b5b50565b80545b919050565b604080516000602091820181905282517f22f60039000000000000000000000000000000000000000000000000000000008152600386016004820152600160a060020a038516602482015292519092839273__RedeemableTokenLib____________________926322f60039926044808201939291829003018186803b156100005760325a03f41561000057505050604051805190501190505b92915050565b61084a8260026109da565b80151561085657610000565b34151561086257610000565b6006830154610877903463ffffffff610c3a16565b6006840155604080513481524360208201528151600160a060020a0333169285927f49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22929081900390910190a35b5b505050565b6000600060008460010160008660000186815481101561000057906000526020600020900160005b9054600160a060020a036101009290920a900481168252602082019290925260400160009081205487549216916001880191908890889081101561000057906000526020600020900160005b9054906101000a9004600160a060020a0316600160a060020a0316600160a060020a03168152602001908152602001600020600101548660010160008860000188815481101561000057906000526020600020900160005b9054906101000a9004600160a060020a0316600160a060020a0316600160a060020a03168152602001908152602001600020600201549250925092505b9250925092565b60006109e583610704565b816003811161000057600284015460ff1660038111610000571490505b92915050565b600a81565b610a188360006109da565b801515610a2457610000565b341515610a3057610000565b600160a060020a0383811660009081526001860160205260409020541615610a5757610000565b60408051606081018252600160a060020a03858116808352346020808501918252848601888152600093845260018b8101909252959092209351845473ffffffffffffffffffffffffffffffffffffffff19169316929092178355905182820155915160029091015584549081018086558591908281838015829011610b0257600083815260209020610b029181019083015b80821115610afe5760008155600101610aea565b5090565b5b505050916000526020600020900160005b8154600160a060020a038088166101009390930a92830292021916179055505b5b50505050565b60068101545b919050565b600881015433600160a060020a039081169116145b919050565b6000610b6b826102b1565b801515610b7757610000565b610b828360026109da565b610b8d8460036109da565b81158015610b99575080155b15610ba357610000565b600160a060020a03331660009081526001808701602052604090912001541515610bcc57610000565b600160a060020a033316600081815260018088016020526040808320909101805490839055905190965086156108fc0291879190818181858888f193505050501515610c1757610000565b5b5b50505b505050565b6000610c2f83831115610c9c565b508082035b92915050565b6000828201610c4b84821015610c9c565b8091505b5092915050565b6000828202610c4b841580610c72575083858381156100005704145b610c9c565b8091505b5092915050565b6000600082848115610000570490508091505b5092915050565b80151561079057610000565b5b505600a165627a7a72305820d29550bdcc67947a01c46f1dbd2cf47afafb4b5ee45e50b7243e97a38981487a0029",
   "networks": {
     "3": {
       "events": {
@@ -1673,8 +1811,913 @@
       },
       "address": "0xee85d9d56672d72ac308125286938134fab6ed5d",
       "updated_at": 1498974589880
+    },
+    "1499119349401": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "investors",
+              "type": "address[]"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0x0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanBidsRejected",
+          "type": "event"
+        }
+      },
+      "links": {
+        "RedeemableTokenLib": "0xbc46a250225b8c7da6e44013d8b4aa1b9b79ffce"
+      },
+      "address": "0xe543b5d742a5eb98dcd7726f85c83c951d1ba251",
+      "updated_at": 1499158854047
+    },
+    "1499196787747": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "investors",
+              "type": "address[]"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0x0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanBidsRejected",
+          "type": "event"
+        }
+      },
+      "links": {
+        "RedeemableTokenLib": "0xa6bd57a1733180f1c064ac3fe3f53bef0a90965d"
+      },
+      "address": "0x36f8256b85f8e72eddd937f99cb2e815062357c0",
+      "updated_at": 1499196818873
+    },
+    "1499197282821": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "investors",
+              "type": "address[]"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0x0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanBidsRejected",
+          "type": "event"
+        }
+      },
+      "links": {
+        "RedeemableTokenLib": "0x69650bd9a847f675a7e57a333f9bcd131f6c6bfb"
+      },
+      "address": "0xb27e53c40e84b202b0fb4c731e91ca5a4f5dd6de",
+      "updated_at": 1499197304104
+    },
+    "1499202761383": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "investors",
+              "type": "address[]"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0x0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanBidsRejected",
+          "type": "event"
+        }
+      },
+      "links": {
+        "RedeemableTokenLib": "0xf86dd06c6d48105bdfe866cfb0ae44375758d78e"
+      },
+      "address": "0x777322703030599eee0608ad2691c07954274625",
+      "updated_at": 1499202766617
+    },
+    "1499204869585": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        },
+        "0x49b6caa9eddf0b790c8a9c8c5f71772369318159814e0320e5aaf6d2f516bb22": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "PeriodicRepayment",
+          "type": "event"
+        },
+        "0xa818fb5aa27f49291c9d6f4a5302c5997ee5d1cc5b16369b7e7efc28179cf4e8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "investors",
+              "type": "address[]"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanTermBegin",
+          "type": "event"
+        },
+        "0x0af07b90cabf632cb57a7f510b2dcdaf41bdd60350054a0a02cacdc8d840ec47": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "borrower",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "LoanBidsRejected",
+          "type": "event"
+        }
+      },
+      "links": {
+        "RedeemableTokenLib": "0xb4131ddfeb6455a48a58483f71b2f414d61c293e"
+      },
+      "address": "0x76a445bc767ec57dbe93d20d4e71271f9f3bb976",
+      "updated_at": 1499204891751
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1498974589880
+  "updated_at": 1499204891751
 }

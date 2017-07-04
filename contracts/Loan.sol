@@ -29,7 +29,6 @@ contract Loan {
   event LoanTermBegin(
     bytes32 indexed uuid,
     address indexed borrower,
-    address[] investors,
     uint blockNumber
   );
 

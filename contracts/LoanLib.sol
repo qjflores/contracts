@@ -62,7 +62,6 @@ library LoanLib {
   event LoanTermBegin(
     bytes32 indexed uuid,
     address indexed borrower,
-    address[] investors,
     uint blockNumber
   );
 
@@ -166,7 +165,7 @@ library LoanLib {
 
     self.state = LoanState.Accepted;
 
-    LoanTermBegin(uuid, self.borrower, bidders, block.number);
+    LoanTermBegin(uuid, self.borrower, block.number);
   }
 
   function rejectBids(Loan storage self, bytes32 uuid)
