@@ -1,8 +1,0 @@
-{
-  "contract_name": "DSMath",
-  "abi": [],
-  "unlinked_binary": "0x6060604052346000575b60358060166000396000f30060606040525b60005600a165627a7a72305820a1e213b166cb482319d39b930698cc99d1e9304b40301ab8a1c3d917bdfa92240029",
-  "networks": {},
-  "schema_version": "0.0.5",
-  "updated_at": 1496853922094
-}

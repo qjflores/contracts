@@ -1,63 +1,21 @@
 {
   "contract_name": "SafeMath",
   "abi": [],
-  "unlinked_binary": "0x6060604052346000575b60358060166000396000f30060606040525b60005600a165627a7a7230582040901fe7652d1be8b85d56ec501c763b86deab118619716782579d0322b2bd9e0029",
+  "unlinked_binary": "0x60606040523415600b57fe5b5b60338060196000396000f30060606040525bfe00a165627a7a72305820a9a9d8b7e96b6141d4daf950180350c3339ffc6626f229dc781ceb37d77394bc0029",
   "networks": {
-    "1498634386385": {
+    "1500100707342": {
       "events": {},
       "links": {},
-      "address": "0x2d7b33acc6102bebc20b48f5a51010d30e41aef8",
-      "updated_at": 1498808443128
+      "address": "0x3f65d7bfe6e311f7efc947b60738c76a75492161",
+      "updated_at": 1500101924197
     },
-    "1498867631055": {
+    "1500102091383": {
       "events": {},
       "links": {},
-      "address": "0x2df4cbae15eae04767af9c89a936714ceb4c5d9b",
-      "updated_at": 1498868976154
-    },
-    "1498875586341": {
-      "events": {},
-      "links": {},
-      "address": "0xa4fd1147fdcc50832d088136b90df4dae4736206",
-      "updated_at": 1498875605332
-    },
-    "1498974088527": {
-      "events": {},
-      "links": {},
-      "address": "0x90c7268b6de6ba49b6c80d58669e74dd7a8f7a57",
-      "updated_at": 1498974589873
-    },
-    "1499119349401": {
-      "events": {},
-      "links": {},
-      "address": "0xa1a2e58f13ca3aa2a167432fcb1e925c03b92724",
-      "updated_at": 1499158854040
-    },
-    "1499196787747": {
-      "events": {},
-      "links": {},
-      "address": "0x7a65416be752542990186d481634dc0e3d4a87a2",
-      "updated_at": 1499196818867
-    },
-    "1499197282821": {
-      "events": {},
-      "links": {},
-      "address": "0x3566937dbdeabf24984cbddf79ef3108b82a6500",
-      "updated_at": 1499197304098
-    },
-    "1499202761383": {
-      "events": {},
-      "links": {},
-      "address": "0xe86dda315840c13771c068b416f11494b6db073d",
-      "updated_at": 1499202766610
-    },
-    "1499204869585": {
-      "events": {},
-      "links": {},
-      "address": "0xb05e159be53ce4c751320ee4c8b9dc65945929b5",
-      "updated_at": 1499204891744
+      "address": "0xe6063ff7a5711199d87777484dab62a630bf4238",
+      "updated_at": 1500105505175
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1499204891744
+  "updated_at": 1500105505175
 }

@@ -8,9 +8,10 @@ module.exports = {
   },
 
   LOAN_STATE: {
-    AUCTION: 0,
-    REVIEW: 1,
-    ACCEPTED: 2,
-    REJECTED: 3
+    NULL: 0,
+    AUCTION: 1,
+    REVIEW: 2,
+    ACCEPTED: 3,
+    REJECTED: 4
   }
 }

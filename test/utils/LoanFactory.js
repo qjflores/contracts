@@ -76,11 +76,11 @@ class LoanFactory {
     let termLength = util.stripZeroEx(web3.toHex(terms.termLength))
     let compounded = util.stripZeroEx(web3.toHex(terms.compounded))
 
-    version = web3.padLeft(version, 64) // bytes32
-    periodType = web3.padLeft(periodType, 2) // uint8
-    periodLength = web3.padLeft(periodLength, 64) // uint256
-    termLength = web3.padLeft(termLength, 64) // uint256
-    compounded = web3.padLeft(compounded, 2) // uint8
+    version = web3._extend.utils.padLeft(version, 64) // bytes32
+    periodType = web3._extend.utils.padLeft(periodType, 2) // uint8
+    periodLength = web3._extend.utils.padLeft(periodLength, 64) // uint256
+    termLength = web3._extend.utils.padLeft(termLength, 64) // uint256
+    compounded = web3._extend.utils.padLeft(compounded, 2) // uint8
 
     return '0x' + version + periodType + periodLength + termLength + compounded;
   }

@@ -219,7 +219,7 @@ contract Loan {
   }
 
   function getState(bytes32 uuid) returns (LoanLib.LoanState) {
-    return loans[uuid].state;
+    return loans[uuid].getCurrentLoanState();
   }
 
   /**
@@ -242,7 +242,7 @@ contract Loan {
   }
 
   function getNumBids(bytes32 uuid) returns (uint256) {
-    return loans[uuid].getNumBids();
+    return loans[uuid].bidders.length;
   }
 
   function getBid(bytes32 uuid, uint256 index) returns (address, uint256, uint256) {

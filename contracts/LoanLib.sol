@@ -16,7 +16,7 @@ library LoanLib {
   using SafeMath for uint;
 
   enum PeriodType { Daily, Weekly, Monthly, Yearly, FixedDate }
-  enum LoanState { Auction, Review, Accepted, Rejected }
+  enum LoanState { Null, Auction, Review, Accepted, Rejected }
 
   /*
       MODIFIERS
@@ -237,17 +237,24 @@ library LoanLib {
     return (self.token.balanceOf(owner) > 0);
   }
 
-  function updateCurrentLoanState(Loan storage self) {
-    if (block.number <= self.auctionEndBlock) {
-      self.state = LoanState.Auction;
-    } else if (block.number > self.auctionEndBlock) {
+  function getCurrentLoanState(Loan storage self) returns (LoanState) {
+    if (block.number <= self.auctionEndBlock)
+      return LoanState.Auction;
+
+    if (block.number > self.auctionEndBlock) {
       if (self.state != LoanState.Accepted && self.state != LoanState.Rejected) {
         if (block.number <= self.reviewPeriodEndBlock) {
-          self.state = LoanState.Review;
+          return LoanState.Review;
         } else {
-          self.state = LoanState.Rejected;
+          return LoanState.Rejected;
         }
       }
     }
+
+    return self.state;
+  }
+
+  function updateCurrentLoanState(Loan storage self) {
+    self.state = getCurrentLoanState(self);
   }
 }
