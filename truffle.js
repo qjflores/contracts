@@ -8,11 +8,11 @@ module.exports = {
       port: 8546,
       network_id: "*" // Match any network id
     },
-    ropsten: {
+    rinkeby: {
       host: "localhost",
       port: 8545,
-      from: '0x6cab1aa1c0d73a6cd00e25f9ada85d625d372806',
-      network_id: 3,
+      from: '0xd95e492950c4972115a9225a97984174e14f73c2',
+      network_id: 4,
       gas: 3000000
     }
   }
