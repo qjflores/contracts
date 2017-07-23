@@ -245,8 +245,12 @@ contract Loan {
     return loans[uuid].bidders.length;
   }
 
-  function getBid(bytes32 uuid, uint256 index) returns (address, uint256, uint256) {
-    return loans[uuid].getBid(index);
+  function getBidByIndex(bytes32 uuid, uint256 index) returns (address, uint256, uint256) {
+    return loans[uuid].getBidByIndex(index);
+  }
+
+  function getBidByAddress(bytes32 uuid, address bidder) returns (address, uint256, uint256) {
+    return loans[uuid].getBidByAddress(bidder);
   }
 
   function getAmountRepaid(bytes32 uuid) returns (uint256) {

@@ -4,7 +4,7 @@ const BigNumber = require('bignumber.js')
 class Util {
   constructor(web3) {
     this.web3 = web3;
-    this.gasPrice = web3.toBigNumber('100000000000');
+    this.gasPrice = web3.eth.gasPrice;
   }
 
   setTimeForward(timeDiff) {
@@ -54,8 +54,14 @@ class Util {
         this.web3.eth.getTransactionReceipt(txHash, function(err, tx) {
           if (err) reject(err)
           else {
-            const gasCost = this.gasPrice.times(tx.gasUsed);
-            accept(gasCost);
+            this.web3.eth.gasPrice((err, result) => {
+              if (err) reject(err)
+              else {
+                console.log(result)
+                const gasCost = result.times(tx.gasUsed);
+                accept(gasCost);
+              }
+            })
           }
         }.bind(this))
       }

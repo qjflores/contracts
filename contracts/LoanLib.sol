@@ -180,11 +180,19 @@ library LoanLib {
     return self.bidders.length;
   }
 
-  function getBid(Loan storage self, uint256 index) returns (address, uint256, uint256) {
+  function getBidByIndex(Loan storage self, uint256 index) returns (address, uint256, uint256) {
     return (
       self.bids[self.bidders[index]].investor,
       self.bids[self.bidders[index]].amount,
       self.bids[self.bidders[index]].minInterestRate
+    );
+  }
+
+  function getBidByAddress(Loan storage self, address bidder) returns (address, uint256, uint256) {
+    return (
+      self.bids[bidder].investor,
+      self.bids[bidder].amount,
+      self.bids[bidder].minInterestRate
     );
   }
   /**
@@ -238,6 +246,9 @@ library LoanLib {
   }
 
   function getCurrentLoanState(Loan storage self) returns (LoanState) {
+    if (self.auctionEndBlock == 0)
+      return LoanState.Null;
+
     if (block.number <= self.auctionEndBlock)
       return LoanState.Auction;
 
