@@ -8,11 +8,11 @@ module.exports = {
       port: 8546,
       network_id: "*" // Match any network id
     },
-    rinkeby: {
+    dharma: {
       host: "localhost",
-      port: 8545,
-      from: '0xd95e492950c4972115a9225a97984174e14f73c2',
-      network_id: 4,
+      port: 8546,
+      from: '0x8886e57e0484b7b5e119f8cd2dbb50e5be38d9b9',
+      network_id: 40734,
       gas: 3000000
     }
   }

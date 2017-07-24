@@ -21,6 +21,12 @@
       "address": "0xf6c31f510aa18da716a4dd4888167122219e1780",
       "updated_at": 1500519183647
     },
+    "40734": {
+      "events": {},
+      "links": {},
+      "address": "0x3a379c7e1d18bc017b1b7a751cbfc49167244a14",
+      "updated_at": 1500876345754
+    },
     "1500100707342": {
       "events": {},
       "links": {},
@@ -215,5 +221,5 @@
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1500811504463
+  "updated_at": 1500876345754
 }

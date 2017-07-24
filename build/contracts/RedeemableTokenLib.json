@@ -579,6 +579,109 @@
       "address": "0x68877fc05c4d00f618b9366664ab5c3c9bc10bc0",
       "updated_at": 1500519183649
     },
+    "40734": {
+      "events": {
+        "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Transfer",
+          "type": "event"
+        },
+        "0xe4401cf33c0f985085feb7609a8ea03e3b318a9b120c8a70e02475a1f126ab41": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "spender",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "Approval",
+          "type": "event"
+        },
+        "0x3d399b127c981d48bf54c1b38051c005657cfeaa390e9f45bd98692aef6897d3": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "uuid",
+              "type": "bytes32"
+            },
+            {
+              "indexed": true,
+              "name": "investor",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "ValueRedeemed",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xdc9d1a5cd11fbb6e569b7ce941280c1091cee26f",
+      "updated_at": 1500876345756
+    },
     "1500100707342": {
       "events": {
         "0x9bc810a6d38726abc8f5936348642462ac646599f8688c0c2b2ea05f4ccaa225": {
@@ -3877,5 +3980,5 @@
     }
   },
   "schema_version": "0.0.5",
-  "updated_at": 1500811504465
+  "updated_at": 1500876345756
 }
