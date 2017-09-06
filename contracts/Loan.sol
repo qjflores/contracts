@@ -101,21 +101,21 @@ contract Loan {
    *    ended (during which all funding bids cannot be withdrawn)
    */
   function createLoan(
-    bytes32 uuid,
-    address borrower,
-    uint256 principal,
-    bytes terms,
-    address attestor,
-    uint256 attestorFee,
-    uint256 defaultRisk,
-    bytes32 r,
-    bytes32 s,
-    uint8 v,
-    uint256 auctionLengthInBlocks,
-    uint256 reviewPeriodLengthInBlocks
+  bytes32 uuid,
+  address borrower,
+  uint256 principal,
+  bytes terms,
+  address attestor,
+  uint256 attestorFee,
+  uint256 defaultRisk,
+  bytes32 r,
+  bytes32 s,
+  uint8 v,
+  uint256 auctionLengthInBlocks,
+  uint256 reviewPeriodLengthInBlocks
   ) {
-    if (loans[uuid].borrower > 0)
-      throw;
+  if (loans[uuid].borrower > 0)
+  throw;
 
     /*
       Each loan has a borrower and an attestor.

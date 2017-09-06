@@ -1,4 +1,3 @@
-
 pragma solidity ^0.4.8;
 
 import "./RedeemableTokenLib.sol";
@@ -130,6 +129,9 @@ library LoanLib {
 
     uint256 totalBalanceAccepted = 0;
 
+    //TODO: vulnerable to DDOS?
+    //TODO: what happens if bidder.length > uint8.max,
+    //TODO: is that reasonable to assume that it might one day happen in a really BIG ICO on dharm
     for (uint8 i = 0; i < bidders.length; i++) {
       // Subtract the amount accepted by the borrower from the bid amount
       self.bids[bidders[i]].amount =
@@ -211,6 +213,7 @@ library LoanLib {
     uint256 amount = self.bids[msg.sender].amount;
     self.bids[msg.sender].amount = 0;
 
+    //TODO: the logic below is confusing me
     if (!msg.sender.send(amount))
       throw;
   }

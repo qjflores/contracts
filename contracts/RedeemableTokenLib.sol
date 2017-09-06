@@ -98,7 +98,7 @@ library RedeemableTokenLib {
   }
 
   /**
-   * @dev Aprove the passed address to spend the specified amount of tokens on beahlf of msg.sender.
+   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
@@ -115,10 +115,10 @@ library RedeemableTokenLib {
   }
 
   /**
-   * @dev Function to check the amount of tokens than an owner allowed to a spender.
+   * @dev Function to check the amount of tokens that an owner allowed to a spender.
    * @param _owner address The address which owns the funds.
    * @param _spender address The address which will spend the funds.
-   * @return A uint specifing the amount of tokens still avaible for the spender.
+   * @return A uint specifing the amount of tokens still available for the spender.
    */
   function allowance(Accounting storage self, address _owner, address _spender) constant returns (uint remaining) {
     return self.allowed[_owner][_spender];
