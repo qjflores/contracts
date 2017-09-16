@@ -38,8 +38,10 @@ contract CDO {
         loanContract = lc;
     }
 
-    // Creates a tokenized CDO, which sends 5 loans to be owned by this contract itself. Issues CDO tokens all to creator of CDO.
+    // Creates a tokenized CDO, which sends the specified loans to be owned by this contract itself. Issues CDO tokens all to creator of CDO.
     function createCDO(bytes32[] loan_uuids, uint num_tokens, bytes32 cdo_id) {
+        //So that we can have 3-tranches.
+        require(num_tokens%3==0);
         //TODO: ensure that there are only 5 uuids
         cdos[cdo_id].loan_uuids = loan_uuids;
 
@@ -62,7 +64,6 @@ contract CDO {
         //should we charge a transaction fee?
         cdos[cdo_id].token.balances[_to] = cdos[cdo_id].token.balances[_to].add(_value);
     }
-
 
     //((balanceOf(recipient) / totalSupply) * redeemableValue) - amountRedeemedByX
     function redeemValue(bytes32 cdo_id, address recipient) {
