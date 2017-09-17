@@ -23,29 +23,44 @@ contract CDO {
     //TODO: add events
     //event CDORedeemed(cdo_id,msg.sender,recipient,redeembalbeValue,block.number);
 
+    event CDOCreated(
+    bytes32[] loan_uuids,
+    bytes32 indexed cdo_id,
+    uint num_tokens,
+    uint blockNumber
+    );
+
+    event LoanContractLinked(address loan);
+
+
     mapping (bytes32 => CDOLib.CDO) cdos;
 
     uint256 public constant DECIMALS = 18;
 
-    Loan loanContract;
+    Loan public loanContract;
 
     //balances_redeemed_per_loan[address][cdo_id][0] is the balance_redeemed by address in the 1st loan of cdos[cdo_id]
     //TODO: make this part of CDOLib.CDO
     mapping (address => mapping(bytes32 => uint[])) balances_redeemed_per_loan;
 
-
-    function CDO(Loan lc) {
-        loanContract = lc;
+    function linkLoanContract(address lc){
+        loanContract = Loan(lc);
+        LoanContractLinked(lc);
+        //TODO: ensure that this address makes sense
     }
-
     // Creates a tokenized CDO, which sends the specified loans to be owned by this contract itself. Issues CDO tokens all to creator of CDO.
     function createCDO(bytes32[] loan_uuids, uint num_tokens, bytes32 cdo_id) {
+
+        CDOCreated(loan_uuids,cdo_id,num_tokens,block.number);
         //So that we can have 3-tranches.
-        require(num_tokens%3==0);
-        //TODO: ensure that there are only 5 uuids
+        require(loan_uuids.length < 6);
+
+    //TODO: impelement the following for 3-tranches
+        //require(num_tokens%3==0);
+        //TODO: ensure that there are less than 5 uuids
         cdos[cdo_id].loan_uuids = loan_uuids;
 
-        for (uint8 i = 0; i < 5; i++) {
+        for (uint8 i = 0; i < loan_uuids.length; i++) {
             uint transferable = loanContract.balanceOf(loan_uuids[i], msg.sender);
 
             //also, at this point, if msg.sender were to call redeemValue, where would the ether go??
@@ -54,6 +69,7 @@ contract CDO {
         }
         cdos[cdo_id].token.balances[msg.sender] = num_tokens;
         cdos[cdo_id].token.totalSupply = num_tokens;
+
     }
 
 
@@ -69,7 +85,7 @@ contract CDO {
     function redeemValue(bytes32 cdo_id, address recipient) {
         //TODO: add sanity checks/assertions
 
-        for (uint8 i = 0; i < 5; i++) { //(ensure there are only 5 loans)
+        for (uint8 i = 0; i < cdos[cdo_id].loan_uuids.length; i++) { //(ensure there are only 5 loans)
             bytes32 loan_uuid = cdos[cdo_id].loan_uuids[i];
             uint balance_redeemed = balances_redeemed_per_loan[msg.sender][cdo_id][i];
 

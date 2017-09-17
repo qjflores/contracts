@@ -3,9 +3,14 @@ import uuidV4 from 'uuid/V4';
 import {web3, util} from './init.js';
 import {PERIOD_TYPE, LOAN_STATE} from './utils/Constants.js';
 import LoanFactory from './utils/LoanFactory.js';
+import CDOFactory from './utils/LoanFactory.js';
+
 import {LoanCreated, LoanTermBegin,
     LoanBidsRejected, PeriodicRepayment,
     ValueRedeemed, Transfer, Approval} from './utils/LoanEvents.js'
+
+import {LoanContractLinked, CDOCreated} from './utils/CDOEvents.js'
+
 import expect from 'expect.js';
 import Random from 'random-js';
 
@@ -30,18 +35,31 @@ contract("Loan", (accounts) => {
         defaultRisk: web3.toWei(0.73, 'ether')
     };
     const LOAN = LoanFactory.generateSignedLoan(LOAN_DATA);
-    const AUCTION_LENGTH_IN_BLOCKS = 20;
-    const REVIEW_PERIOD_IN_BLOCKS = 40;
-    const INVESTORS = accounts.slice(2,14);
+    const LOAN1_AUCTION_LENGTH_IN_BLOCKS = 20;
+    const LOAN1_REVIEW_PERIOD_IN_BLOCKS = 32;
+
+    //TODO: give some sense to the following
+    const LOAN2_AUCTION_LENGTH_IN_BLOCKS = 30;
+    const LOAN2_REVIEW_PERIOD_IN_BLOCKS = 42;
+
+    const INVESTORS = accounts.slice(2, 9);
+
+    const INVESTORS2 = accounts.slice(10, 17);
 
     let loan;
     let loanFactory;
     let loanCreatedBlockNumber;
     let bids = {};
 
+
     before(async () => {
         loan = await Loan.deployed();
         loanFactory = new LoanFactory(loan);
+    })
+
+    let cdo;
+    before(async () => {
+        cdo = await CDO.deployed();
     })
 
     describe("#createLoan()", () => {
@@ -57,8 +75,8 @@ contract("Loan", (accounts) => {
                 LOAN.signature.r,
                 LOAN.signature.s,
                 LOAN.signature.v,
-                AUCTION_LENGTH_IN_BLOCKS,
-                REVIEW_PERIOD_IN_BLOCKS
+                LOAN1_AUCTION_LENGTH_IN_BLOCKS,
+                LOAN1_REVIEW_PERIOD_IN_BLOCKS
             )
 
             util.assertEventEquality(result.logs[0], LoanCreated({
@@ -72,73 +90,8 @@ contract("Loan", (accounts) => {
             loanCreatedBlockNumber = result.receipt.blockNumber;
 
         });
-
-        it("should throw on a loan request with a duplicate UUID to be created", async() => {
-            try {
-                await loan.createLoan(
-                    LOAN.uuid,
-                    LOAN.borrower,
-                    LOAN.principal,
-                    LOAN.terms,
-                    LOAN.attestor,
-                    LOAN.attestorFee,
-                    LOAN.defaultRisk,
-                    LOAN.signature.r,
-                    LOAN.signature.s,
-                    LOAN.signature.v,
-                    AUCTION_LENGTH_IN_BLOCKS,
-                    REVIEW_PERIOD_IN_BLOCKS
-                )
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it("should throw on a loan request with a zero block auction length", async() => {
-            try {
-                await loan.createLoan(
-                    web3.sha3(uuidV4()),
-                    LOAN.borrower,
-                    LOAN.principal,
-                    LOAN.terms,
-                    LOAN.attestor,
-                    LOAN.attestorFee,
-                    LOAN.defaultRisk,
-                    LOAN.signature.r,
-                    LOAN.signature.s,
-                    LOAN.signature.v,
-                    0,
-                    REVIEW_PERIOD_IN_BLOCKS
-                )
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it("should throw on a loan request with a zero block review period length", async() => {
-            try {
-                await loan.createLoan(
-                    web3.sha3(uuidV4()),
-                    LOAN.borrower,
-                    LOAN.principal,
-                    LOAN.terms,
-                    LOAN.attestor,
-                    LOAN.attestorFee,
-                    LOAN.defaultRisk,
-                    LOAN.signature.r,
-                    LOAN.signature.s,
-                    LOAN.signature.v,
-                    AUCTION_LENGTH_IN_BLOCKS,
-                    0
-                )
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
     })
+
 
     describe('#getters', () => {
         it('should get borrower', async () => {
@@ -146,53 +99,171 @@ contract("Loan", (accounts) => {
             expect(borrower).to.be(LOAN.borrower);
         })
 
-        it('should get principal', async() => {
+        it('should get principal', async () => {
             const principal = await loan.getPrincipal.call(LOAN.uuid);
             expect(principal.equals(LOAN.principal)).to.be(true);
         })
 
-        it('should get terms', async() => {
+        it('should get terms', async () => {
             const terms = await loan.getTerms.call(LOAN.uuid);
             expect(terms).to.be(LOAN.terms);
         })
 
-        it('should get attestor', async() => {
+        it('should get attestor', async () => {
             const attestor = await loan.getAttestor.call(LOAN.uuid);
             expect(attestor).to.be(LOAN.attestor);
         })
 
-        it('should get attestorFee', async() => {
+        it('should get attestorFee', async () => {
             const attestorFee = await loan.getAttestorFee.call(LOAN.uuid);
             expect(attestorFee.equals(LOAN.attestorFee)).to.be(true);
         })
 
-        it('should get defaultRisk', async() => {
+        it('should get defaultRisk', async () => {
             const defaultRisk = await loan.getDefaultRisk.call(LOAN.uuid);
             expect(defaultRisk.equals(LOAN.defaultRisk)).to.be(true);
         })
 
-        it('should get the ECDSA signature', async() => {
+        it('should get the ECDSA signature', async () => {
             const signature = await loan.getAttestorSignature.call(LOAN.uuid);
             expect(signature[0]).to.be(LOAN.signature.r);
             expect(signature[1]).to.be(LOAN.signature.s);
             expect(signature[2].equals(LOAN.signature.v)).to.be(true);
         })
 
-        it('should get auction end block', async() => {
+        it('should get auction end block', async () => {
             const auctionEndBlock = await loan.getAuctionEndBlock.call(LOAN.uuid);
             const expectedAuctionEndBlock =
-                loanCreatedBlockNumber + AUCTION_LENGTH_IN_BLOCKS;
+                loanCreatedBlockNumber + LOAN1_AUCTION_LENGTH_IN_BLOCKS;
             expect(auctionEndBlock.equals(expectedAuctionEndBlock)).to.be(true);
         })
 
-        it('should get review period end block', async() => {
+        it('should get review period end block', async () => {
             const reviewPeriodEndBlock = await loan.getReviewPeriodEndBlock.call(LOAN.uuid);
             const expectedReviewPeriodEndBlock =
-                loanCreatedBlockNumber + AUCTION_LENGTH_IN_BLOCKS + REVIEW_PERIOD_IN_BLOCKS;
+                loanCreatedBlockNumber + LOAN1_AUCTION_LENGTH_IN_BLOCKS + LOAN1_REVIEW_PERIOD_IN_BLOCKS;
             expect(reviewPeriodEndBlock.equals(expectedReviewPeriodEndBlock)).to.be(true);
         })
 
-        it("should get entire data packet", async() => {
+        it("should get entire data packet", async () => {
+            const data = await loan.getData.call(LOAN.uuid);
+            expect(data[0]).to.be(LOAN.borrower);
+            expect(data[1].equals(LOAN.principal)).to.be(true);
+            expect(data[2]).to.be(LOAN.terms);
+            expect(data[3]).to.be(LOAN.attestor);
+            expect(data[4].equals(LOAN.attestorFee)).to.be(true);
+            expect(data[5].equals(LOAN.defaultRisk)).to.be(true);
+        })
+    })
+
+    let loanCreatedBlockNumber2;
+    let bids2 = {};
+
+    const LOAN_DATA_2 = {
+        uuid: web3.sha3(uuidV4()),
+        borrower: accounts[9],
+        principal: web3.toWei(1, 'ether'),
+        terms: {
+            version: web3.sha3(TERMS_SCHEMA_VERSION),
+            periodType: PERIOD_TYPE.MONTHLY,
+            periodLength: 1,
+            termLength: 4,
+            compounded: true
+        },
+        attestor: accounts[1],
+        attestorFee: web3.toWei(0.001, 'ether'),
+        defaultRisk: web3.toWei(0.73, 'ether')
+    };
+
+    const LOAN2 = LoanFactory.generateSignedLoan(LOAN_DATA_2);
+    describe("#createLoan2()", () => {
+
+        it("should successfuly create loan2 request", async () => {
+            //TODO: make the auction and review period end blocks make sense
+            const result2 = await loan.createLoan(
+                LOAN2.uuid,
+                LOAN2.borrower,
+                LOAN2.principal,
+                LOAN2.terms,
+                LOAN2.attestor,
+                LOAN2.attestorFee,
+                LOAN2.defaultRisk,
+                LOAN2.signature.r,
+                LOAN2.signature.s,
+                LOAN2.signature.v,
+                LOAN2_AUCTION_LENGTH_IN_BLOCKS,
+                LOAN2_REVIEW_PERIOD_IN_BLOCKS
+            )
+
+            console.log(result2.logs[0])
+            util.assertEventEquality(result2.logs[0], LoanCreated({
+                uuid: LOAN2.uuid,
+                borrower: LOAN2.borrower,
+                attestor: LOAN2.attestor,
+                blockNumber: result2.receipt.blockNumber
+            }))
+
+            // Save the latest block in which the loan was created
+            loanCreatedBlockNumber2 = result2.receipt.blockNumber;
+
+        });
+    })
+
+
+
+    describe('#loan 2, getters', () => {
+        it('should get borrower', async () => {
+            const borrower2 = await loan.getBorrower.call(LOAN2.uuid);
+            expect(borrower2).to.be(LOAN2.borrower);
+        })
+
+        it('should get principal', async () => {
+            const principal2 = await loan.getPrincipal.call(LOAN2.uuid);
+            expect(principal2.equals(LOAN2.principal)).to.be(true);
+        })
+
+        it('should get terms', async () => {
+            const terms2 = await loan.getTerms.call(LOAN2.uuid);
+            expect(terms2).to.be(LOAN2.terms);
+        })
+
+        it('should get attestor', async () => {
+            const attestor2 = await loan.getAttestor.call(LOAN2.uuid);
+            expect(attestor2).to.be(LOAN2.attestor);
+        })
+
+        it('should get attestorFee', async () => {
+            const attestorFee2 = await loan.getAttestorFee.call(LOAN2.uuid);
+            expect(attestorFee2.equals(LOAN2.attestorFee)).to.be(true);
+        })
+
+        it('should get defaultRisk', async () => {
+            const defaultRisk = await loan.getDefaultRisk.call(LOAN2.uuid);
+            expect(defaultRisk.equals(LOAN2.defaultRisk)).to.be(true);
+        })
+
+        it('should get the ECDSA signature', async () => {
+            const signature2 = await loan.getAttestorSignature.call(LOAN2.uuid);
+            expect(signature2[0]).to.be(LOAN2.signature.r);
+            expect(signature2[1]).to.be(LOAN2.signature.s);
+            expect(signature2[2].equals(LOAN2.signature.v)).to.be(true);
+        })
+
+        it('should get auction end block', async () => {
+            const auctionEndBlock2 = await loan.getAuctionEndBlock.call(LOAN2.uuid);
+            const expectedAuctionEndBlock2 =
+                loanCreatedBlockNumber2 + LOAN2_AUCTION_LENGTH_IN_BLOCKS;
+            expect(auctionEndBlock2.equals(expectedAuctionEndBlock2)).to.be(true);
+        })
+
+        it('should get review period end block', async () => {
+            const reviewPeriodEndBlock2 = await loan.getReviewPeriodEndBlock.call(LOAN2.uuid);
+            const expectedReviewPeriodEndBlock2 =
+                loanCreatedBlockNumber2 + LOAN2_AUCTION_LENGTH_IN_BLOCKS + LOAN2_REVIEW_PERIOD_IN_BLOCKS;
+            expect(reviewPeriodEndBlock2.equals(expectedReviewPeriodEndBlock2)).to.be(true);
+        })
+
+        it("should get entire data packet", async () => {
             const data = await loan.getData.call(LOAN.uuid);
             expect(data[0]).to.be(LOAN.borrower);
             expect(data[1].equals(LOAN.principal)).to.be(true);
@@ -204,9 +275,9 @@ contract("Loan", (accounts) => {
     })
 
     describe('#bid()', () => {
-        it('should allow investors to bid during the auction period', async () => {
-            await Promise.all(INVESTORS.map(async function(investor) {
-                const amount = Random().real(0.4, 0.7);
+        it('loan1 should allow investors to bid during the auction period', async () => {
+            await Promise.all(INVESTORS.map(async function (investor) {
+                const amount = Random().real(0.4, 0.6);
                 const minInterestRate = Random().real(0.1, 0.2);
 
                 bids[investor] = {
@@ -218,137 +289,80 @@ contract("Loan", (accounts) => {
                     LOAN.uuid,
                     investor,
                     bids[investor].minInterestRate,
-                    { from: investor, value: bids[investor].amount }
+                    {from: investor, value: bids[investor].amount}
                 )
             }))
 
             const numBids = await loan.getNumBids.call(LOAN.uuid);
             for (let i = 0; i < numBids; i++) {
-                let bid = await loan.getBid.call(LOAN.uuid, i);
+                let bid = await loan.getBidByIndex.call(LOAN.uuid, i);
                 let investor = bid[0];
                 expect(bid[1].equals(bids[investor].amount)).to.be(true);
                 expect(bid[2].equals(bids[investor].minInterestRate)).to.be(true);
             }
         })
 
-        it('should throw if investor tries to bid twice', async () => {
-            try {
-                await loan.bid(
-                    LOAN.uuid,
-                    INVESTORS[0],
-                    web3.toWei(0.1, 'ether'),
-                    { from: INVESTORS[0], value: web3.toWei(0.1, 'ether') }
-                )
-                expect().fail("should throw error")
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
 
-        it('should throw if borrower accepts terms before auction period ends', async () => {
-            try {
-                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0,5),
-                    [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-                        web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-                        web3.toWei(0.2, 'ether')],
-                    { from: LOAN.borrower })
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it('should throw if borrower rejects terms before auction period ends', async () => {
-            try {
-                await loan.rejectBids(LOAN.uuid);
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it('should not allow investors to bid after the auction period', async () => {
+        it('loan1 should not allow investors to bid after the auction period', async () => {
             try {
                 await util.setBlockNumberForward(8);
                 await loan.bid(
                     LOAN.uuid,
                     INVESTORS[0],
                     web3.toWei(0.1, 'ether'),
-                    { from: INVESTORS[0], value: web3.toWei(0.1, 'ether') }
+                    {from: INVESTORS[0], value: web3.toWei(0.1, 'ether')}
                 )
                 expect().fail("should throw error")
             } catch (err) {
                 util.assertThrowMessage(err)
             }
         })
+
+
     })
 
+
     describe('#acceptBids()', () => {
-        it ("should throw when non-borrower tries to accept terms", async () => {
-            try {
-                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
-                    [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-                        web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
-                        web3.toWei(0.201, 'ether')],
-                    { from: LOAN.attestor })
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it ('should throw when borrower accepts w/o full principal+fee raised', async () => {
-            try {
-                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 3),
-                    [web3.toWei(0.3, 'ether'),
-                        web3.toWei(0.4, 'ether'), web3.toWei(0.3, 'ether')],
-                    { from: LOAN.borrower })
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-
-        it ('should throw when borrower accepts w/ > full principal+fee amount', async () => {
+        it('should throw when borrower accepts w/ > full principal+fee amount', async () => {
             try {
                 await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 6),
                     [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
                         web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
                         web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether')],
-                    { from: LOAN.borrower })
+                    {from: LOAN.borrower})
                 expect().fail("should throw error");
             } catch (err) {
                 util.assertThrowMessage(err);
             }
         })
 
-        it ('should throw when borrower accepts w/ non-investors', async () => {
+        it('should throw when borrower accepts w/ non-investors', async () => {
             try {
                 await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 4).concat(LOAN.attestor),
                     [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
                         web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
                         web3.toWei(0.2, 'ether')],
-                    { from: LOAN.borrower })
+                    {from: LOAN.borrower})
                 expect().fail("should throw error");
             } catch (err) {
                 util.assertThrowMessage(err);
             }
         })
 
-        it ('should throw when borrower accepts w/ > than any investor bid', async () => {
+        it('should throw when borrower accepts w/ > than any investor bid', async () => {
             try {
                 await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
                     [web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
                         web3.toWei(0.75, 'ether'), web3.toWei(0.025, 'ether'),
                         web3.toWei(0.025, 'ether')],
-                    { from: LOAN.borrower })
+                    {from: LOAN.borrower})
                 expect().fail("should throw error");
             } catch (err) {
                 util.assertThrowMessage(err);
             }
         })
 
-        it ('should throw when borrower accepts w/ > 10 investors', async () => {
+        it('should throw when borrower accepts w/ > 10 investors', async () => {
             try {
                 await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 11),
                     [web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
@@ -356,14 +370,14 @@ contract("Loan", (accounts) => {
                         web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
                         web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
                         web3.toWei(0.05, 'ether'), web3.toWei(0.05, 'ether'),],
-                    { from: LOAN.borrower })
+                    {from: LOAN.borrower})
                 expect().fail("should throw error");
             } catch (err) {
                 util.assertThrowMessage(err);
             }
         })
 
-        it ('should allow borrower to accept w/ < 10 investors and full principal+fee', async () => {
+        it('should allow borrower to accept w/ < 10 investors and full principal+fee', async () => {
             const borrowerBalanceBefore = web3.eth.getBalance(LOAN.borrower);
             const attestorBalanceBefore = web3.eth.getBalance(LOAN.attestor);
             const bidAmountsAccepted = [
@@ -375,7 +389,7 @@ contract("Loan", (accounts) => {
             ]
 
             const result = await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
-                bidAmountsAccepted, { from: LOAN.borrower })
+                bidAmountsAccepted, {from: LOAN.borrower})
 
             const gasCosts = await util.getGasCosts(result);
             const borrowerBalanceAfter = web3.eth.getBalance(LOAN.borrower);
@@ -417,7 +431,9 @@ contract("Loan", (accounts) => {
 
             const acceptedBidsInterestRates =
                 INVESTORS.slice(0, 5)
-                    .map((investor) => { return bids[investor].minInterestRate })
+                    .map((investor) => {
+                        return bids[investor].minInterestRate
+                    })
 
             const expectedInterestRate = web3.BigNumber.max(acceptedBidsInterestRates)
             const acceptedInterestRate = await loan.getInterestRate.call(LOAN.uuid)
@@ -434,527 +450,265 @@ contract("Loan", (accounts) => {
         })
     })
 
-    describe('#rejectBids()', () => {
-        let loanInReview = _.cloneDeep(LOAN_DATA);
-        let bids = [
-            {
-                bidder: INVESTORS[0],
-                amount: 1.0,
-                minInterestRate: 0.1
-            }
-        ]
+    describe('#bid2()', () => {
+        it('loan2 should be in auction state', async () => {
+            let state2 = await loan.getState.call(LOAN2.uuid);
+            expect(state2.equals(LOAN_STATE.AUCTION)).to.be(true, "wrong state");
+            })
 
-        beforeEach(async () => {
-            loanInReview.uuid = web3.sha3(uuidV4());
-            await loanFactory.generateReviewStateLoan(loanInReview, bids);
-        })
 
-        it('should allow a borrower to reject the bids', async () => {
-            const auctionEndBlock = await loan.getAuctionEndBlock.call(loanInReview.uuid)
-            const reviewPeriodEndBlock = await loan.getReviewPeriodEndBlock.call(loanInReview.uuid)
+        it('loan2 should allow investors to bid during the auction period', async () => {
+            await Promise.all(INVESTORS2.map(async function (investor) {
+                const amount2 = Random().real(0.4, 0.6);
+                const minInterestRate2 = Random().real(0.1, 0.2);
 
-            const result = await loan.rejectBids(loanInReview.uuid);
-
-            util.assertEventEquality(result.logs[0], LoanBidsRejected({
-                uuid: loanInReview.uuid,
-                borrower: loanInReview.borrower,
-                blockNumber: result.receipt.blockNumber
-            }));
-
-            const state = await loan.getState.call(loanInReview.uuid);
-            expect(state.equals(LOAN_STATE.REJECTED)).to.be(true);
-
-        })
-
-        it('should throw when non-borrower tries to reject the bids', async () => {
-            try {
-                await loan.rejectBids(loanInReview.uuid, { from: loanInReview.attestor });
-                expect().fail("should throw error");
-            } catch (err) {
-                util.assertThrowMessage(err);
-            }
-        })
-    })
-
-    describe('#withdrawInvestment()', () => {
-        let withdrawalTestLoan = _.cloneDeep(LOAN_DATA);
-
-        describe('State: Auction', () => {
-            before(async () => {
-                let auctionPeriod = 5;
-                let reviewPeriod = 100;
-
-                withdrawalTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateAuctionStateLoan(withdrawalTestLoan,
-                    auctionPeriod, reviewPeriod);
+                bids2[investor] = {
+                    amount: web3.toWei(amount2, 'ether'),
+                    minInterestRate: web3.toWei(minInterestRate2, 'ether')
+                }
 
                 await loan.bid(
-                    withdrawalTestLoan.uuid,
-                    INVESTORS[0],
-                    web3.toWei(0.1, 'ether'),
-                    { value: web3.toWei(0.3, 'ether') }
+                    LOAN2.uuid,
+                    investor,
+                    bids2[investor].minInterestRate,
+                    {from: investor, value: bids2[investor].amount}
                 )
-            })
+            }))
 
-            it('should not allow auction non-participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[1] })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-
-            it('should not allow auction participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[0] })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
+            // const numBids2 = await loan.getNumBids.call(LOAN2.uuid);
+            // for (let i = 0; i < numBids2; i++) {
+            //     let bid2 = await loan.getBidByIndex.call(LOAN2.uuid, i);
+            //     let investor2 = bid2[0];
+            //     expect(bid2[1].equals(bids2[investor2].amount)).to.be(true);
+            //     expect(bid2[2].equals(bids2[investor2].minInterestRate)).to.be(true);
+            // }
         })
 
-        describe('State: Review', () => {
-            before(async () => {
-                bids = [];
-                for (let i = 0; i < 5; i++) {
-                    bids.push({
-                        bidder: INVESTORS[i],
-                        amount: Random().real(0.2, 0.3),
-                        minInterestRate: Random().real(0.1, 0.2)
-                    })
-                }
-                withdrawalTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateReviewStateLoan(withdrawalTestLoan, bids);
-            })
 
-            it('should not allow auction non-participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: withdrawalTestLoan.attestor })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-
-            it('should not allow auction participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[0] })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-        })
-
-        describe('State: Accepted', () => {
-            let bids = [];
-            for (let i = 0; i < INVESTORS.length; i++) {
-                bids.push({
-                    bidder: INVESTORS[i],
-                    amount: Random().real(0.2, 0.3),
-                    minInterestRate: Random().real(0.1, 0.2)
-                })
+        it('loan2 should not allow investors to bid after the auction period', async () => {
+            try {
+                await util.setBlockNumberForward(8);
+                await loan.bid(
+                    LOAN2.uuid,
+                    INVESTORS2[0],
+                    web3.toWei(0.1, 'ether'),
+                    {from: INVESTORS2[0], value: web3.toWei(0.1, 'ether')}
+                )
+                expect().fail("should throw error")
+            } catch (err) {
+                util.assertThrowMessage(err)
             }
-
-            let acceptedBids = []
-            for (let i = 0; i < 5; i++) {
-                const amount = i == 4 ? 0.201 : 0.2; // include attestorFee in last bid
-                acceptedBids.push({
-                    bidder: INVESTORS[i],
-                    amount: amount
-                })
-            }
-
-            before(async () => {
-                withdrawalTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateAcceptedStateLoan(withdrawalTestLoan,
-                    bids, acceptedBids);
-            })
-
-            it('should not allow auction non-participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: withdrawalTestLoan.attestor })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-
-            it('should allow auction participants to withdraw', async () => {
-                for (let i = 0; i < INVESTORS.length; i++) {
-                    const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
-                    const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[i] })
-                    const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
-                    const gasCosts = await util.getGasCosts(result);
-                    const investmentAmount = i < 5 ? acceptedBids[i].amount : 0;
-                    const bidAmount = web3.toBigNumber(bids[i].amount)
-                    const expectedRefund =
-                        web3.toWei(bidAmount.minus(investmentAmount), 'ether');
-
-                    expect(balanceAfter
-                        .minus(balanceBefore)
-                        .plus(gasCosts)
-                        .equals(expectedRefund))
-                        .to.be(true);
-                }
-            })
-
-            it('should not allow auction participants to withdraw twice', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[0] })
-                    expect().fail("should throw error")
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-        })
-
-        describe('State: Rejected', () => {
-            let bids = [];
-            for (let i = 0; i < INVESTORS.length; i++) {
-                bids.push({
-                    bidder: INVESTORS[i],
-                    amount: Random().real(0.2, 0.3),
-                    minInterestRate: Random().real(0.1, 0.2)
-                })
-            }
-
-            before(async () => {
-                withdrawalTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateRejectedStateLoan(withdrawalTestLoan, bids);
-            })
-
-            it('should not allow auction non-participants to withdraw', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: withdrawalTestLoan.attestor })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-
-            it('should allow auction participants to withdraw', async () => {
-                for (let i = 0; i < INVESTORS.length; i++) {
-                    const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
-                    const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[i] })
-                    const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
-                    const gasCosts = await util.getGasCosts(result);
-
-                    expect(balanceAfter
-                        .minus(balanceBefore)
-                        .plus(gasCosts)
-                        .equals(web3.toWei(bids[i].amount, 'ether'))).to.be(true);
-                }
-            })
-
-            it('should not allow auction participants to withdraw twice', async () => {
-                try {
-                    await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-                        { from: INVESTORS[0] })
-                    expect().fail("should throw error")
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
         })
     })
 
-    describe('#periodicRepayment()', () => {
-        let repaymentTestLoan = _.cloneDeep(LOAN_DATA);
-
-        describe('State: Auction', () => {
-            before(async () => {
-                repaymentTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateAuctionStateLoan(repaymentTestLoan, 1, 1);
-            })
-
-            it('should throw if periodicRepayment attempted', async () => {
-                try {
-                    await loan.periodicRepayment(repaymentTestLoan.uuid,
-                        { value: web3.toWei(1, 'ether') })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-        })
-
-        describe('State: Review', () => {
-            let bids = [{
-                bidder: INVESTORS[0],
-                minInterestRate: 0.1,
-                amount: 0.1
-            }]
-
-            before(async () => {
-                repaymentTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateReviewStateLoan(repaymentTestLoan, bids);
-            })
-
-            it('should throw if periodicRepayment attempted', async () => {
-                try {
-                    await loan.periodicRepayment(repaymentTestLoan.uuid,
-                        { value: web3.toWei(1, 'ether') })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-        })
-
-        describe('State: Accepted', () => {
-            let bids = [{
-                bidder: INVESTORS[0],
-                minInterestRate: 0.1,
-                amount: 1.001
-            }]
-
-            let acceptedBids = [{
-                bidder: INVESTORS[0],
-                amount: 1.001
-            }]
-
-            before(async () => {
-                repaymentTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateAcceptedStateLoan(repaymentTestLoan, bids,
-                    acceptedBids);
-            })
-
-            it('should throw if borrower repays with 0 value', async () => {
-                try {
-                    await loan.periodicRepayment(repaymentTestLoan.uuid,
-                        { value: 0 })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
-
-            it('should allow borrower to periodically repay', async () => {
-                const result = await loan.periodicRepayment(repaymentTestLoan.uuid,
-                    { value: web3.toWei(1, 'ether') })
-                const amountRepaid = await loan.getAmountRepaid.call(repaymentTestLoan.uuid);
-                expect(amountRepaid.equals(web3.toWei(1, 'ether'))).to.be(true);
-                util.assertEventEquality(result.logs[0], PeriodicRepayment({
-                    uuid: repaymentTestLoan.uuid,
-                    from: repaymentTestLoan.borrower,
-                    value: web3.toWei(1, 'ether'),
-                    blockNumber: result.receipt.blockNumber
-                }))
-            })
-        })
-
-        describe('State: Rejected', () => {
-            let bids = [{
-                bidder: INVESTORS[0],
-                minInterestRate: 0.1,
-                amount: 1.01
-            }]
-
-            before(async () => {
-                repaymentTestLoan.uuid = web3.sha3(uuidV4());
-                await loanFactory.generateRejectedStateLoan(repaymentTestLoan, bids);
-            })
-
-            it('should throw if periodicRepayment attempted', async () => {
-                try {
-                    await loan.periodicRepayment(repaymentTestLoan.uuid,
-                        { value: web3.toWei(1, 'ether') })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            });
-        })
-    })
-
-    describe('RedeemableToken', () => {
-        let redeemableTokenTestLoan = _.cloneDeep(LOAN_DATA);
-        const bids = [
-            {
-                bidder: INVESTORS[0],
-                amount: 0.2002,
-                minInterestRate: 0.1
+    describe('CDOCreation', () => {
+        const TERMS_SCHEMA_VERSION = "0.1.0";
+        const CDO_DATA = {
+            uuid: web3.sha3(uuidV4()),
+            borrower: accounts[0],
+            principal: web3.toWei(1, 'ether'),
+            terms: {
+                version: web3.sha3(TERMS_SCHEMA_VERSION),
+                periodType: PERIOD_TYPE.WEEKLY,
+                periodLength: 1,
+                termLength: 4,
+                compounded: true
             },
-            {
-                bidder: INVESTORS[1],
-                amount: 0.8008,
-                minInterestRate: 0.1
-            }
-        ]
-        const acceptedBids = [
-            {
-                bidder: INVESTORS[0],
-                amount: 0.2002,
-            },
-            {
-                bidder: INVESTORS[1],
-                amount: 0.8008,
-            }
-        ]
+            attestor: accounts[1],
+            attestorFee: web3.toWei(0.001, 'ether'),
+            defaultRisk: web3.toWei(0.73, 'ether')
+        };
+        //const CDO = CDOFactory.generateCDO(CDO_DATA);
+        const INVESTORS = accounts.slice(2, 14);
+
+        let loan;
+        let loanFactory;
+        let loanCreatedBlockNumber;
+        let bids = {};
 
         before(async () => {
-            redeemableTokenTestLoan.uuid = web3.sha3(uuidV4());
-            await loanFactory.generateAcceptedStateLoan(redeemableTokenTestLoan,
-                bids, acceptedBids);
-
+            loan = await Loan.deployed();
+            loanFactory = new LoanFactory(loan);
         })
 
-        describe("first repayment", async () => {
-            const expectedInvestorOneRedeemable = web3.toWei(0.1, 'ether');
-            const expectedInvestorTwoRedeemable = web3.toWei(0.4, 'ether');
+
+        describe('RedeemableToken', () => {
+            let redeemableTokenTestLoan = _.cloneDeep(LOAN_DATA);
+            const bids = [
+                {
+                    bidder: INVESTORS[0],
+                    amount: 0.2002,
+                    minInterestRate: 0.1
+                },
+                {
+                    bidder: INVESTORS[1],
+                    amount: 0.8008,
+                    minInterestRate: 0.1
+                }
+            ]
+            const acceptedBids = [
+                {
+                    bidder: INVESTORS[0],
+                    amount: 0.2002,
+                },
+                {
+                    bidder: INVESTORS[1],
+                    amount: 0.8008,
+                }
+            ]
 
             before(async () => {
-                await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
-                    { value: web3.toWei(0.5, 'ether') })
-            });
+                redeemableTokenTestLoan.uuid = web3.sha3(uuidV4());
+                await loanFactory.generateAcceptedStateLoan(redeemableTokenTestLoan,
+                    bids, acceptedBids);
 
-            describe('getRedeemableValue() before', () => {
-                it('should retrieve correct values', async () => {
-                    const investorOneRedeemable =
-                        await loan.getRedeemableValue
-                            .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
-                    const investorTwoRedeemable =
-                        await loan.getRedeemableValue
-                            .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
+            })
 
-                    expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
-                        .to.be(true)
-                    expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
-                        .to.be(true)
+            describe("first repayment", async () => {
+                const expectedInvestorOneRedeemable = web3.toWei(0.1, 'ether');
+                const expectedInvestorTwoRedeemable = web3.toWei(0.4, 'ether');
+
+                before(async () => {
+                    await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
+                        {value: web3.toWei(0.5, 'ether')})
+                });
+
+                describe('getRedeemableValue() before', () => {
+                    it('should retrieve correct values', async () => {
+                        const investorOneRedeemable =
+                            await loan.getRedeemableValue
+                                .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
+                        const investorTwoRedeemable =
+                            await loan.getRedeemableValue
+                                .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
+
+                        expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
+                            .to.be(true)
+                        expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
+                            .to.be(true)
+                    })
+                })
+
+                describe('redeemValue()', () => {
+                    it('should redeem the correct amount for investor 1', async () => {
+                        const balanceBefore = web3.eth.getBalance(INVESTORS[0])
+                        const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                            INVESTORS[0], {from: INVESTORS[0]});
+                        const gasCosts = await util.getGasCosts(result);
+                        const balanceAfter = web3.eth.getBalance(INVESTORS[0])
+                        const amountRedeemed =
+                            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+                        expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
+
+                        util.assertEventEquality(result.logs[0], ValueRedeemed({
+                            uuid: redeemableTokenTestLoan.uuid,
+                            investor: INVESTORS[0],
+                            recipient: INVESTORS[0],
+                            value: expectedInvestorOneRedeemable,
+                            blockNumber: result.receipt.blockNumber
+                        }))
+                    })
+
+                    it('should not let investor 1 redeem any more value', async () => {
+                        try {
+                            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                                INVESTORS[0], {from: INVESTORS[0]});
+                            expect().fail("should throw error");
+                        } catch (err) {
+                            util.assertThrowMessage(err)
+                        }
+                    })
                 })
             })
 
-            describe('redeemValue()', () => {
-                it('should redeem the correct amount for investor 1', async () => {
-                    const balanceBefore = web3.eth.getBalance(INVESTORS[0])
-                    const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                        INVESTORS[0], { from: INVESTORS[0] });
-                    const gasCosts = await util.getGasCosts(result);
-                    const balanceAfter = web3.eth.getBalance(INVESTORS[0])
-                    const amountRedeemed =
-                        balanceAfter.minus(balanceBefore).plus(gasCosts);
+            describe('second repayment', async () => {
+                const expectedInvestorOneRedeemable = web3.toWei(0.06, 'ether');
+                const expectedInvestorTwoRedeemable = web3.toWei(0.64, 'ether');
 
-                    expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
+                before(async () => {
+                    await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
+                        {value: web3.toWei(0.3, 'ether')})
+                });
 
-                    util.assertEventEquality(result.logs[0], ValueRedeemed({
-                        uuid: redeemableTokenTestLoan.uuid,
-                        investor: INVESTORS[0],
-                        recipient: INVESTORS[0],
-                        value: expectedInvestorOneRedeemable,
-                        blockNumber: result.receipt.blockNumber
-                    }))
+                describe('getRedeemableValue() before', () => {
+                    it('should retrieve correct values', async () => {
+                        const investorOneRedeemable =
+                            await loan.getRedeemableValue
+                                .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
+                        const investorTwoRedeemable =
+                            await loan.getRedeemableValue
+                                .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
+
+                        expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
+                            .to.be(true)
+                        expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
+                            .to.be(true)
+                    })
                 })
 
-                it('should not let investor 1 redeem any more value', async () => {
-                    try {
-                        await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                            INVESTORS[0], { from: INVESTORS[0] });
-                        expect().fail("should throw error");
-                    } catch (err) {
-                        util.assertThrowMessage(err)
-                    }
-                })
+                describe('redeemValue()', () => {
+                    it('should redeem the correct amount for investor 1', async () => {
+                        const balanceBefore = web3.eth.getBalance(INVESTORS[0])
+                        const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                            INVESTORS[0], {from: INVESTORS[0]});
+                        const gasCosts = await util.getGasCosts(result);
+                        const balanceAfter = web3.eth.getBalance(INVESTORS[0])
+                        const amountRedeemed =
+                            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+                        expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
+
+                        util.assertEventEquality(result.logs[0], ValueRedeemed({
+                            uuid: redeemableTokenTestLoan.uuid,
+                            investor: INVESTORS[0],
+                            recipient: INVESTORS[0],
+                            value: expectedInvestorOneRedeemable,
+                            blockNumber: result.receipt.blockNumber
+                        }))
+                    })
+
+                    it('should not let investor 1 redeem any more value', async () => {
+                        try {
+                            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                                INVESTORS[0], {from: INVESTORS[0]});
+                            expect().fail("should throw error");
+                        } catch (err) {
+                            util.assertThrowMessage(err)
+                        }
+                    })
+
+                    it('should redeem the correct amount for investor 2', async () => {
+                        const balanceBefore = web3.eth.getBalance(INVESTORS[1])
+                        const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                            INVESTORS[1], {from: INVESTORS[1]});
+                        const gasCosts = await util.getGasCosts(result);
+                        const balanceAfter = web3.eth.getBalance(INVESTORS[1])
+                        const amountRedeemed =
+                            balanceAfter.minus(balanceBefore).plus(gasCosts);
+
+                        expect(amountRedeemed.equals(expectedInvestorTwoRedeemable)).to.be(true);
+
+                        util.assertEventEquality(result.logs[0], ValueRedeemed({
+                            uuid: redeemableTokenTestLoan.uuid,
+                            investor: INVESTORS[1],
+                            recipient: INVESTORS[1],
+                            value: expectedInvestorTwoRedeemable,
+                            blockNumber: result.receipt.blockNumber
+                        }))
+                    })
+
+                    it('should not let investor 2 redeem any more value', async () => {
+                        try {
+                            await loan.redeemValue(redeemableTokenTestLoan.uuid,
+                                INVESTORS[1], {from: INVESTORS[1]});
+                            expect().fail("should throw error");
+                        } catch (err) {
+                            util.assertThrowMessage(err)
+                        }
+                    })
+                });
             })
-        })
-
-        describe('second repayment', async () => {
-            const expectedInvestorOneRedeemable = web3.toWei(0.06, 'ether');
-            const expectedInvestorTwoRedeemable = web3.toWei(0.64, 'ether');
-
-            before(async () => {
-                await loan.periodicRepayment(redeemableTokenTestLoan.uuid,
-                    { value: web3.toWei(0.3, 'ether') })
-            });
-
-            describe('getRedeemableValue() before', () => {
-                it('should retrieve correct values', async () => {
-                    const investorOneRedeemable =
-                        await loan.getRedeemableValue
-                            .call(redeemableTokenTestLoan.uuid, INVESTORS[0])
-                    const investorTwoRedeemable =
-                        await loan.getRedeemableValue
-                            .call(redeemableTokenTestLoan.uuid, INVESTORS[1])
-
-                    expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
-                        .to.be(true)
-                    expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
-                        .to.be(true)
-                })
-            })
-
-            describe('redeemValue()', () => {
-                it('should redeem the correct amount for investor 1', async () => {
-                    const balanceBefore = web3.eth.getBalance(INVESTORS[0])
-                    const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                        INVESTORS[0], { from: INVESTORS[0] });
-                    const gasCosts = await util.getGasCosts(result);
-                    const balanceAfter = web3.eth.getBalance(INVESTORS[0])
-                    const amountRedeemed =
-                        balanceAfter.minus(balanceBefore).plus(gasCosts);
-
-                    expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
-
-                    util.assertEventEquality(result.logs[0], ValueRedeemed({
-                        uuid: redeemableTokenTestLoan.uuid,
-                        investor: INVESTORS[0],
-                        recipient: INVESTORS[0],
-                        value: expectedInvestorOneRedeemable,
-                        blockNumber: result.receipt.blockNumber
-                    }))
-                })
-
-                it('should not let investor 1 redeem any more value', async () => {
-                    try {
-                        await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                            INVESTORS[0], { from: INVESTORS[0] });
-                        expect().fail("should throw error");
-                    } catch (err) {
-                        util.assertThrowMessage(err)
-                    }
-                })
-
-                it('should redeem the correct amount for investor 2', async () => {
-                    const balanceBefore = web3.eth.getBalance(INVESTORS[1])
-                    const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                        INVESTORS[1], { from: INVESTORS[1] });
-                    const gasCosts = await util.getGasCosts(result);
-                    const balanceAfter = web3.eth.getBalance(INVESTORS[1])
-                    const amountRedeemed =
-                        balanceAfter.minus(balanceBefore).plus(gasCosts);
-
-                    expect(amountRedeemed.equals(expectedInvestorTwoRedeemable)).to.be(true);
-
-                    util.assertEventEquality(result.logs[0], ValueRedeemed({
-                        uuid: redeemableTokenTestLoan.uuid,
-                        investor: INVESTORS[1],
-                        recipient: INVESTORS[1],
-                        value: expectedInvestorTwoRedeemable,
-                        blockNumber: result.receipt.blockNumber
-                    }))
-                })
-
-                it('should not let investor 2 redeem any more value', async () => {
-                    try {
-                        await loan.redeemValue(redeemableTokenTestLoan.uuid,
-                            INVESTORS[1], { from: INVESTORS[1] });
-                        expect().fail("should throw error");
-                    } catch (err) {
-                        util.assertThrowMessage(err)
-                    }
-                })
-            });
         })
     })
 
@@ -1006,7 +760,7 @@ contract("Loan", (accounts) => {
         describe('#transfer()', () => {
             it('should allow a token holder to transfer their balance', async () => {
                 const result = await loan.transfer(erc20TestLoan.uuid,
-                    INVESTORS[1], web3.toWei(0.1, 'ether'), { from: INVESTORS[0] })
+                    INVESTORS[1], web3.toWei(0.1, 'ether'), {from: INVESTORS[0]})
 
                 const expectedInvestorOneBalance = web3.toWei(0.1, 'ether');
                 const expectedInvestorTwoBalance = web3.toWei(0.9, 'ether');
@@ -1027,17 +781,19 @@ contract("Loan", (accounts) => {
                     blockNumber: result.receipt.blockNumber
                 }))
             })
-
-            it('should not let holder transfer balance they do not have', async () => {
-                try {
-                    await loan.transfer(erc20TestLoan.uuid,
-                        INVESTORS[1], web3.toWei(0.2, 'ether'), { from: INVESTORS[0] })
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
-            })
+            //
+            // it('should not let holder transfer balance they do not have', async () => {
+            //     try {
+            //         await loan.transfer(erc20TestLoan.uuid,
+            //             INVESTORS[1], web3.toWei(0.2, 'ether'), {from: INVESTORS[0]})
+            //         expect().fail("should throw error");
+            //     } catch (err) {
+            //         util.assertThrowMessage(err);
+            //     }
+            // })
         })
+
+
 
         describe('#allowance()', () => {
             it('should expose the allowance endpoint', async () => {
@@ -1053,7 +809,7 @@ contract("Loan", (accounts) => {
                     erc20TestLoan.uuid,
                     INVESTORS[0],
                     web3.toWei(0.4, 'ether'),
-                    { from: INVESTORS[1] }
+                    {from: INVESTORS[1]}
                 )
 
                 const allowance =
@@ -1074,7 +830,7 @@ contract("Loan", (accounts) => {
         describe('#transferFrom()', () => {
             it("should allow user to transfer from other user's approved funds", async () => {
                 const result = await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0],
-                    web3.toWei(0.2, 'ether'), { from : INVESTORS[0] });
+                    web3.toWei(0.2, 'ether'), {from: INVESTORS[0]});
 
                 const expectedInvestorOneBalance = web3.toWei(0.3, 'ether');
                 const expectedInvestorTwoBalance = web3.toWei(0.7, 'ether');
@@ -1096,25 +852,63 @@ contract("Loan", (accounts) => {
                 }))
             })
 
-            it("should throw if user tries transfering from other user's unapproved funds", async () => {
-                try {
-                    await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[2], INVESTORS[0],
-                        web3.toWei(0.2, 'ether'), { from : INVESTORS[0] });
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
+            // it("should throw if user tries transfering from other user's unapproved funds", async () => {
+            //     try {
+            //         await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[2], INVESTORS[0],
+            //             web3.toWei(0.2, 'ether'), {from: INVESTORS[0]});
+            //         expect().fail("should throw error");
+            //     } catch (err) {
+            //         util.assertThrowMessage(err);
+            //     }
+            // })
+            //
+            // it('should throw if user tries transfering more than they are approved', async () => {
+            //     try {
+            //         await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0],
+            //             web3.toWei(0.3, 'ether'), {from: INVESTORS[0]});
+            //         expect().fail("should throw error");
+            //     } catch (err) {
+            //         util.assertThrowMessage(err);
+            //     }
+            // })
+        })
+
+        describe('#createCDO()', () => {
+            const CDO_DATA = {
+                cdo_id: web3.sha3(uuidV4()),
+                creator: accounts[2],
+                loan_uuids: [LOAN.uuid,LOAN2.uuid],
+                num_tokens: 100
+            };
+
+            it("should allow user to link loan contract to this CDO", async () => {
+                const result3 = await cdo.linkLoanContract(loan.address);
+                util.assertEventEquality(result3.logs[0], LoanContractLinked({loan: loan.address}))
+
+                // util.assertEventEquality(result.logs[0], LoanCreated({
+                //     uuid: LOAN.uuid,
+                //     borrower: LOAN.borrower,
+                //     attestor: LOAN.attestor,
+                //     blockNumber: result.receipt.blockNumber
+                // }))
             })
 
-            it('should throw if user tries transfering more than they are approved', async () => {
-                try {
-                    await loan.transferFrom(erc20TestLoan.uuid, INVESTORS[1], INVESTORS[0],
-                        web3.toWei(0.3, 'ether'), { from : INVESTORS[0] });
-                    expect().fail("should throw error");
-                } catch (err) {
-                    util.assertThrowMessage(err);
-                }
+            it("should allow user to createCDO", async () => {
+
+                const result4 = await cdo.createCDO(CDO_DATA.loan_uuids, CDO_DATA.num_tokens, CDO_DATA.cdo_id);
+
+
+                util.assertEventEquality(result4.logs[0], CDOCreated({
+                    loan_uuids:CDO_DATA.loan_uuids,
+                    cdo_id: CDO_DATA.cdo_id,
+                    num_tokens:CDO_DATA.num_tokens,
+                    blockNumber: result4.receipt.blockNumber
+                }))
             })
+
         })
     })
+
+
 })
+

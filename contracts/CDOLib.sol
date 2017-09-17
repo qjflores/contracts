@@ -39,6 +39,7 @@ library CDOLib {
     RedeemableTokenLib.Accounting token;
     bytes32[] loan_uuids;
     mapping(bytes32 => uint) num_tokens_per_loan;
+    uint256 tranche;
     //TODO: implement the following
     //mapping (address => mapping(bytes32 => uint[])) balances_redeemed_per_loan;
     }

@@ -20,53 +20,53 @@ contract Loan {
    * EVENTS
    */
   event PeriodicRepayment(
-    bytes32 indexed uuid,
-    address indexed from,
-    uint value,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed from,
+  uint value,
+  uint blockNumber
   );
 
   event LoanTermBegin(
-    bytes32 indexed uuid,
-    address indexed borrower,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed borrower,
+  uint blockNumber
   );
 
   event LoanCreated(
-    bytes32 indexed uuid,
-    address indexed borrower,
-    address indexed attestor,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed borrower,
+  address indexed attestor,
+  uint blockNumber
   );
 
   event Transfer(
-    bytes32 indexed uuid,
-    address from,
-    address indexed to,
-    uint value,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address from,
+  address indexed to,
+  uint value,
+  uint blockNumber
   );
 
   event Approval(
-    bytes32 indexed uuid,
-    address indexed owner,
-    address spender,
-    uint value,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed owner,
+  address spender,
+  uint value,
+  uint blockNumber
   );
 
   event LoanBidsRejected(
-    bytes32 indexed uuid,
-    address indexed borrower,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed borrower,
+  uint blockNumber
   );
 
   event ValueRedeemed(
-    bytes32 indexed uuid,
-    address indexed investor,
-    address indexed recipient,
-    uint value,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address indexed investor,
+  address indexed recipient,
+  uint value,
+  uint blockNumber
   );
 
   // Mapping associating loan data stores with their corresponding 32 byte UUIDs
@@ -114,8 +114,8 @@ contract Loan {
   uint256 auctionLengthInBlocks,
   uint256 reviewPeriodLengthInBlocks
   ) {
-  if (loans[uuid].borrower > 0)
-  throw;
+    if (loans[uuid].borrower > 0)
+    throw;
 
     /*
       Each loan has a borrower and an attestor.
@@ -144,9 +144,9 @@ contract Loan {
 
     /* Auction Data */
     if (auctionLengthInBlocks == 0)
-      throw;
+    throw;
     if (reviewPeriodLengthInBlocks == 0)
-      throw;
+    throw;
 
     loans[uuid].auctionEndBlock = block.number + auctionLengthInBlocks;
     loans[uuid].reviewPeriodEndBlock = loans[uuid].auctionEndBlock + reviewPeriodLengthInBlocks;
@@ -155,21 +155,21 @@ contract Loan {
   }
 
   function getData(bytes32 uuid)
-    returns (
-      address,
-      uint256,
-      bytes,
-      address,
-      uint256,
-      uint256
-    ) {
+  returns (
+  address,
+  uint256,
+  bytes,
+  address,
+  uint256,
+  uint256
+  ) {
     return (
-      loans[uuid].borrower,
-      loans[uuid].principal,
-      loans[uuid].terms,
-      loans[uuid].attestor,
-      loans[uuid].attestorFee,
-      loans[uuid].defaultRisk
+    loans[uuid].borrower,
+    loans[uuid].principal,
+    loans[uuid].terms,
+    loans[uuid].attestor,
+    loans[uuid].attestorFee,
+    loans[uuid].defaultRisk
     );
   }
 
@@ -198,7 +198,7 @@ contract Loan {
   }
 
   function getAttestorSignature(bytes32 uuid)
-    returns (bytes32, bytes32, uint8) {
+  returns (bytes32, bytes32, uint8) {
     return (loans[uuid].r, loans[uuid].s, loans[uuid].v);
   }
 

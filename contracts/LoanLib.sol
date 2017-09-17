@@ -70,6 +70,12 @@ library LoanLib {
     uint blockNumber
   );
 
+  event LoanBidsRejected(
+  bytes32 indexed uuid,
+  address indexed borrower,
+  uint blockNumber
+  );
+
   uint8 public constant MAX_INVESTORS_PER_LOAN = 10;
 
   struct Bid {
