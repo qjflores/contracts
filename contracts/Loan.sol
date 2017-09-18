@@ -282,6 +282,7 @@ contract Loan {
   */
   function transfer(bytes32 uuid, address _to, uint _value) {
     loans[uuid].token.transfer(uuid, _to, _value);
+
   }
 
   /**

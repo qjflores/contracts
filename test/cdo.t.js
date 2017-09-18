@@ -9,7 +9,7 @@ import {LoanCreated, LoanTermBegin,
     LoanBidsRejected, PeriodicRepayment,
     ValueRedeemed, Transfer, Approval} from './utils/LoanEvents.js'
 
-import {LoanContractLinked, CDOCreated} from './utils/CDOEvents.js'
+import {LoanContractLinked, CDOCreated, CDOValueRedeemed} from './utils/CDOEvents.js'
 
 import expect from 'expect.js';
 import Random from 'random-js';
@@ -44,13 +44,14 @@ contract("Loan", (accounts) => {
 
     const INVESTORS = accounts.slice(2, 9);
 
-    const INVESTORS2 = accounts.slice(10, 17);
+    //TODO: make this less stupdi
+    const INVESTORS2 = [accounts[2],accounts[10], accounts[11], accounts[12], accounts[13], accounts[14], accounts[15]];
 
     let loan;
     let loanFactory;
     let loanCreatedBlockNumber;
     let bids = {};
-
+    let gasCosts1;
 
     before(async () => {
         loan = await Loan.deployed();
@@ -92,8 +93,7 @@ contract("Loan", (accounts) => {
         });
     })
 
-
-    describe('#getters', () => {
+    describe('#loan1_getters', () => {
         it('should get borrower', async () => {
             const borrower = await loan.getBorrower.call(LOAN.uuid);
             expect(borrower).to.be(LOAN.borrower);
@@ -209,9 +209,7 @@ contract("Loan", (accounts) => {
         });
     })
 
-
-
-    describe('#loan 2, getters', () => {
+    describe('#loan2_getters', () => {
         it('should get borrower', async () => {
             const borrower2 = await loan.getBorrower.call(LOAN2.uuid);
             expect(borrower2).to.be(LOAN2.borrower);
@@ -274,7 +272,7 @@ contract("Loan", (accounts) => {
         })
     })
 
-    describe('#bid()', () => {
+    describe('#loan1_bid()', () => {
         it('loan1 should allow investors to bid during the auction period', async () => {
             await Promise.all(INVESTORS.map(async function (investor) {
                 const amount = Random().real(0.4, 0.6);
@@ -321,8 +319,7 @@ contract("Loan", (accounts) => {
 
     })
 
-
-    describe('#acceptBids()', () => {
+    describe('#loan1_acceptBids()', () => {
         it('should throw when borrower accepts w/ > full principal+fee amount', async () => {
             try {
                 await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 6),
@@ -391,12 +388,12 @@ contract("Loan", (accounts) => {
             const result = await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
                 bidAmountsAccepted, {from: LOAN.borrower})
 
-            const gasCosts = await util.getGasCosts(result);
+            gasCosts1 = await util.getGasCosts(result);
             const borrowerBalanceAfter = web3.eth.getBalance(LOAN.borrower);
             const attestorBalanceAfter = web3.eth.getBalance(LOAN.attestor);
 
             expect(borrowerBalanceAfter
-                .minus(borrowerBalanceBefore).plus(gasCosts).equals(LOAN.principal))
+                .minus(borrowerBalanceBefore).plus(gasCosts1).equals(LOAN.principal))
                 .to.be(true, "balance delta is not principal")
 
             expect(attestorBalanceAfter
@@ -450,11 +447,11 @@ contract("Loan", (accounts) => {
         })
     })
 
-    describe('#bid2()', () => {
+    describe('#loan2_bid()', () => {
         it('loan2 should be in auction state', async () => {
             let state2 = await loan.getState.call(LOAN2.uuid);
             expect(state2.equals(LOAN_STATE.AUCTION)).to.be(true, "wrong state");
-            })
+        })
 
 
         it('loan2 should allow investors to bid during the auction period', async () => {
@@ -485,40 +482,151 @@ contract("Loan", (accounts) => {
         })
 
 
-        it('loan2 should not allow investors to bid after the auction period', async () => {
+        // it('loan2 should not allow investors to bid after the auction period', async () => {
+        //     try {
+        //         await util.setBlockNumberForward(8);
+        //         await loan.bid(
+        //             LOAN2.uuid,
+        //             INVESTORS2[0],
+        //             web3.toWei(0.1, 'ether'),
+        //             {from: INVESTORS2[0], value: web3.toWei(0.1, 'ether')}
+        //         )
+        //         expect().fail("should throw error")
+        //     } catch (err) {
+        //         util.assertThrowMessage(err)
+        //     }
+        // })
+    })
+
+    describe('#loan2_acceptBids()', () => {
+        it('should throw when borrower accepts w/ > full principal+fee amount', async () => {
             try {
-                await util.setBlockNumberForward(8);
-                await loan.bid(
-                    LOAN2.uuid,
-                    INVESTORS2[0],
-                    web3.toWei(0.1, 'ether'),
-                    {from: INVESTORS2[0], value: web3.toWei(0.1, 'ether')}
-                )
-                expect().fail("should throw error")
+                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 6),
+                    [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+                        web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+                        web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether')],
+                    {from: LOAN.borrower})
+                expect().fail("should throw error");
             } catch (err) {
-                util.assertThrowMessage(err)
+                util.assertThrowMessage(err);
+            }
+        })
+
+        it('should throw when borrower accepts w/ non-investors', async () => {
+            try {
+                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 4).concat(LOAN.attestor),
+                    [web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+                        web3.toWei(0.2, 'ether'), web3.toWei(0.2, 'ether'),
+                        web3.toWei(0.2, 'ether')],
+                    {from: LOAN.borrower})
+                expect().fail("should throw error");
+            } catch (err) {
+                util.assertThrowMessage(err);
+            }
+        })
+
+        it('should throw when borrower accepts w/ > than any investor bid', async () => {
+            try {
+                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
+                    [web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
+                        web3.toWei(0.75, 'ether'), web3.toWei(0.025, 'ether'),
+                        web3.toWei(0.025, 'ether')],
+                    {from: LOAN.borrower})
+                expect().fail("should throw error");
+            } catch (err) {
+                util.assertThrowMessage(err);
+            }
+        })
+
+        it('should throw when borrower accepts w/ > 10 investors', async () => {
+            try {
+                await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 11),
+                    [web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
+                        web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
+                        web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
+                        web3.toWei(0.1, 'ether'), web3.toWei(0.1, 'ether'),
+                        web3.toWei(0.05, 'ether'), web3.toWei(0.05, 'ether'),],
+                    {from: LOAN.borrower})
+                expect().fail("should throw error");
+            } catch (err) {
+                util.assertThrowMessage(err);
+            }
+        })
+
+        it('should allow borrower to accept w/ < 10 investors and full principal+fee', async () => {
+            const borrowerBalanceBefore = web3.eth.getBalance(LOAN2.borrower);
+            const attestorBalanceBefore = web3.eth.getBalance(LOAN2.attestor);
+            const bidAmountsAccepted = [
+                web3.toWei(0.2, 'ether'),
+                web3.toWei(0.2, 'ether'),
+                web3.toWei(0.2, 'ether'),
+                web3.toWei(0.2, 'ether'),
+                web3.toWei(0.201, 'ether')
+            ]
+
+            const result = await loan.acceptBids(LOAN2.uuid, INVESTORS2.slice(0, 5),
+                bidAmountsAccepted, {from: LOAN2.borrower})
+
+            let gasCosts2 = await util.getGasCosts(result);
+            const borrowerBalanceAfter = web3.eth.getBalance(LOAN2.borrower);
+            const attestorBalanceAfter = web3.eth.getBalance(LOAN2.attestor);
+
+            expect(borrowerBalanceAfter
+                .minus(borrowerBalanceBefore).plus(gasCosts2).equals(LOAN2.principal))
+                .to.be(true, "balance delta is not principal")
+
+            expect(attestorBalanceAfter
+                .minus(attestorBalanceBefore).equals(LOAN2.attestorFee))
+                .to.be(true, "attestor delta is not attestorFee")
+
+            const state = await loan.getState.call(LOAN2.uuid);
+            expect(state.equals(LOAN_STATE.ACCEPTED)).to.be(true, "wrong state");
+
+            util.assertEventEquality(result.logs[0], LoanTermBegin({
+                uuid: LOAN2.uuid,
+                borrower: LOAN2.borrower,
+                blockNumber: result.receipt.blockNumber
+            }))
+
+            for (let i = 0; i < 5; i++) {
+                const totalInvested =
+                    web3.toBigNumber(LOAN2.principal).plus(LOAN2.attestorFee)
+                const expectedBalance =
+                    web3.toBigNumber(bidAmountsAccepted[i])
+                        .times(LOAN2.principal)
+                        .div(totalInvested)
+                        .trunc();
+
+                let balance = await loan.balanceOf(LOAN2.uuid, INVESTORS2[i]);
+
+                expect(balance.equals(expectedBalance)).to.be(true);
+            }
+
+            let nonInvestorBalance = await loan.balanceOf(LOAN.uuid, INVESTORS2[5])
+            expect(nonInvestorBalance.equals(0)).to.be(true);
+
+            const acceptedBidsInterestRates =
+                INVESTORS2.slice(0, 5)
+                    .map((investor) => {
+                        return bids2[investor].minInterestRate
+                    })
+
+            const expectedInterestRate = web3.BigNumber.max(acceptedBidsInterestRates)
+            const acceptedInterestRate = await loan.getInterestRate.call(LOAN2.uuid)
+            expect(expectedInterestRate.equals(acceptedInterestRate)).to.be(true);
+        })
+
+        it('should throw if borrower tries to reject after accepting', async () => {
+            try {
+                await loan.rejectBids(LOAN2.uuid);
+                expect().fail("should throw error");
+            } catch (err) {
+                util.assertThrowMessage(err);
             }
         })
     })
 
-    describe('CDOCreation', () => {
-        const TERMS_SCHEMA_VERSION = "0.1.0";
-        const CDO_DATA = {
-            uuid: web3.sha3(uuidV4()),
-            borrower: accounts[0],
-            principal: web3.toWei(1, 'ether'),
-            terms: {
-                version: web3.sha3(TERMS_SCHEMA_VERSION),
-                periodType: PERIOD_TYPE.WEEKLY,
-                periodLength: 1,
-                termLength: 4,
-                compounded: true
-            },
-            attestor: accounts[1],
-            attestorFee: web3.toWei(0.001, 'ether'),
-            defaultRisk: web3.toWei(0.73, 'ether')
-        };
-        //const CDO = CDOFactory.generateCDO(CDO_DATA);
+    describe('#periodicRepayment()', () => {
         const INVESTORS = accounts.slice(2, 14);
 
         let loan;
@@ -530,7 +638,6 @@ contract("Loan", (accounts) => {
             loan = await Loan.deployed();
             loanFactory = new LoanFactory(loan);
         })
-
 
         describe('RedeemableToken', () => {
             let redeemableTokenTestLoan = _.cloneDeep(LOAN_DATA);
@@ -679,7 +786,7 @@ contract("Loan", (accounts) => {
                     })
 
                     it('should redeem the correct amount for investor 2', async () => {
-                        const balanceBefore = web3.eth.getBalance(INVESTORS[1])
+                        const balanceBefore = web3.eth.getBalance(INVESTORS[1]);
                         const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
                             INVESTORS[1], {from: INVESTORS[1]});
                         const gasCosts = await util.getGasCosts(result);
@@ -794,7 +901,6 @@ contract("Loan", (accounts) => {
         })
 
 
-
         describe('#allowance()', () => {
             it('should expose the allowance endpoint', async () => {
                 const allowance =
@@ -872,43 +978,166 @@ contract("Loan", (accounts) => {
             //     }
             // })
         })
+    })
 
-        describe('#createCDO()', () => {
-            const CDO_DATA = {
-                cdo_id: web3.sha3(uuidV4()),
-                creator: accounts[2],
-                loan_uuids: [LOAN.uuid,LOAN2.uuid],
-                num_tokens: 100
-            };
+    const CDO_DATA = {
+        cdo_id: web3.sha3(uuidV4()),
+        creator: accounts[2],
+        loan_uuids: [LOAN.uuid, LOAN2.uuid],
+        num_tokens: 100,
+    };
 
-            it("should allow user to link loan contract to this CDO", async () => {
-                const result3 = await cdo.linkLoanContract(loan.address);
-                util.assertEventEquality(result3.logs[0], LoanContractLinked({loan: loan.address}))
+    var creator_loan1_bal;
+    var creator_loan2_bal;
 
-                // util.assertEventEquality(result.logs[0], LoanCreated({
-                //     uuid: LOAN.uuid,
-                //     borrower: LOAN.borrower,
-                //     attestor: LOAN.attestor,
-                //     blockNumber: result.receipt.blockNumber
-                // }))
-            })
+    describe('#createCDO()', () => {
+        let creator_bal;
 
-            it("should allow user to createCDO", async () => {
+        it("should give CDO creator's correct loan1 balances", async () => {
+            creator_loan1_bal = await loan.balanceOf.call(LOAN.uuid, accounts[2]);
+            //console.log(web3.fromWei(creator_loan1_bal).toString());
+            //expect(web3.fromWei(creator_loan1_bal).toString()).to.be(.2-(web3.fromWei(gasCosts1,'ether')/5));
 
-                const result4 = await cdo.createCDO(CDO_DATA.loan_uuids, CDO_DATA.num_tokens, CDO_DATA.cdo_id);
+            const totalInvested1 =
+                web3.toBigNumber(LOAN.principal).plus(LOAN.attestorFee)
+            const expectedBalance1 =
+                web3.toBigNumber(web3.toWei(0.2, 'ether'))
+                    .times(LOAN.principal)
+                    .div(totalInvested1)
+                    .trunc();
 
+            let balance1 = await loan.balanceOf(LOAN.uuid, accounts[2]);
+            expect(balance1.toString()).to.be(expectedBalance1.toString());
+            //creator_bal  = [creator_loan1_bal,creator_loan2_bal];
+        })
 
-                util.assertEventEquality(result4.logs[0], CDOCreated({
-                    loan_uuids:CDO_DATA.loan_uuids,
-                    cdo_id: CDO_DATA.cdo_id,
-                    num_tokens:CDO_DATA.num_tokens,
-                    blockNumber: result4.receipt.blockNumber
-                }))
-            })
+        it("should give CDO creator's correct loan2 balances", async () => {
+            creator_loan2_bal = await loan.balanceOf.call(LOAN2.uuid,accounts[2]);
+            console.log(web3.fromWei(creator_loan2_bal).toString());
+            //expect(web3.fromWei(creator_loan1_bal).toString()).to.be(.2-(web3.fromWei(gasCosts1,'ether')/5));
 
+            const totalInvested2 =
+                web3.toBigNumber(LOAN2.principal).plus(LOAN2.attestorFee)
+            const expectedBalance2 =
+                web3.toBigNumber(web3.toWei(0.2, 'ether'))
+                    .times(LOAN2.principal)
+                    .div(totalInvested2)
+                    .trunc();
+
+            let balance2 = await loan.balanceOf(LOAN2.uuid, accounts[2]);
+            expect(balance2.toString()).to.be(expectedBalance2.toString());
+            //creator_bal  = [creator_loan1_bal,creator_loan2_bal];
+        })
+
+        it("should allow user to link loan contract to this CDO", async () => {
+            const result3 = await cdo.linkLoanContract(loan.address);
+            util.assertEventEquality(result3.logs[0], LoanContractLinked({loan: loan.address}))
+
+        })
+
+        it("should allow user to createCDO", async () => {
+            const result4 = await cdo.createCDO(CDO_DATA.loan_uuids, CDO_DATA.num_tokens, CDO_DATA.cdo_id);
+
+            util.assertEventEquality(result4.logs[0], CDOCreated({
+                loan_uuids: CDO_DATA.loan_uuids,
+                cdo_id: CDO_DATA.cdo_id,
+                num_tokens: CDO_DATA.num_tokens,
+                blockNumber: result4.receipt.blockNumber
+            }))
         })
     })
 
+    describe('#cdo_getters()', () => {
+        it("CDO should have correct num_tokens", async () => {
+            //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
+            var numtokens = await cdo.getNumTokensFromID.call(CDO_DATA.cdo_id);
+            expect(web3.toString(numtokens)).to.be(web3.toString(CDO_DATA.num_tokens));
+        })
 
+        it("CDO creator should have all tokens", async () => {
+            //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
+            var creator_tokens = await cdo.getMyBalanceFromID(CDO_DATA.cdo_id);
+            expect(web3.toString(creator_tokens)).to.be(web3.toString(CDO_DATA.num_tokens));
+        })
+
+        // it("CDO should have all tokens", async () => {
+        //
+        //     const CDOContractRedeemable =
+        //     await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
+        // })
+
+
+    })
+
+    describe('#cdo()', () => {
+        it(" CDO contract should've received tokens from loanContract", async () => {
+            //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
+            var contract_tokens_loan1 = await loan.balanceOf.call(LOAN.uuid, cdo.address);
+            expect(web3.toString(contract_tokens_loan1)).to.be(web3.toString(creator_loan1_bal));
+
+            var contract_tokens_loan2 = await loan.balanceOf.call(LOAN2.uuid, cdo.address);
+            expect(web3.toString(contract_tokens_loan2)).to.be(web3.toString(creator_loan2_bal));
+        })
+
+        // it(" CDO holder should be able to redeem tokens from CDO", async () => {
+        //         const expectedCDOContractRedeemable = web3.toWei(0.5, 'ether');
+        //         before(async () => {
+        //             await loan.periodicRepayment(LOAN.uuid,
+        //                 {value: web3.toWei(0.5, 'ether')})
+        //         });
+        //
+        //         describe('getRedeemableValue() before', () => {
+        //             it('should retrieve correct CDO redeemable values', async () => {
+        //                 const CDOContractRedeemable =
+        //                     await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
+        //                 expect(CDOContractRedeemable.toString()).to.be(expectedCDOContractRedeemable)
+        //             })
+        //         })
+        //
+        //         describe('redeemValue()', () => {
+        //             it('should redeem the correct amount for investor 1', async () => {
+        //                 const balanceBefore = web3.eth.getBalance(accounts[2]);
+        //                 const res = await loan.redeemValue(LOAN.uuid,
+        //                     accounts[2], {from: accounts[2]});
+        //                 const gasCosts = await util.getGasCosts(res);
+        //             })
+        //         })
+        //
+        //         it("CDO contract redeems the correct amount and sends it to correct recipient address", async () => {
+        //
+        //             // var redeemable_loan1 = await loan.getRedeemableValue.call(LOAN.uuid,cdo.address);
+        //             // var redeemable_loan2 = await loan.getRedeemableValue.call(LOAN2.uuid,cdo.address);
+        //             //
+        //             // const creatorBalanceBefore = web3.eth.getBalance(accounts[2]);
+        //             //const result5 = await cdo.redeemValue(CDO_DATA.cdo_id, accounts[2]);
+        //             console.log(accounts[2]);
+        //             console.log(LOAN.uuid);
+        //             //await loan.getRedeemableValue.call(redeemableTokenTestLoan.uuid, INVESTORS[0])
+        //             //const res = await loan.getRedeemableValue.call(LOAN.uuid, accounts[2]);
+        //             const res = await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
+        //             //console.log(res.logs[0]);
+        //             const result5 = await cdo.redeemValue(CDO_DATA.cdo_id, accounts[2]);
+        //
+        //             util.assertEventEquality(result5.logs[0], CDOValueRedeemed({
+        //                 cdo_id: CDO_DATA.cdo_id,
+        //                 recipient: accounts[2]
+        //             }))
+        //
+        //             // const gasCosts = await util.getGasCosts(result5);
+        //             //
+        //             //
+        //             // //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
+        //             // console.log(web3.toString(web3.fromWei(redeemable_loan1, 'ether')))
+        //             // console.log(redeemable_loan2.toString())
+        //             // console.log(accounts[2])
+        //             // const creatorBalanceAfter = web3.eth.getBalance(accounts[2]);
+        //             // expect(creatorBalanceAfter.minus(creatorBalanceBefore).plus(gasCosts)).to.be(redeemable_loan1 + redeemable_loan2);
+        //             // //
+        //             // // CDOValueRedeemed(cdo_id, recipient, to_send);
+        //             // //
+        //         })
+        //
+        // })
+    
+    })
 })
-

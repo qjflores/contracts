@@ -19,6 +19,7 @@ import "./LoanLib.sol";
 contract CDO {
     using CDOLib for CDOLib.CDO;
     using SafeMath for uint;
+    using RedeemableTokenLib for RedeemableTokenLib.Accounting;
 
     //TODO: add events
     //event CDORedeemed(cdo_id,msg.sender,recipient,redeembalbeValue,block.number);
@@ -30,28 +31,35 @@ contract CDO {
     uint blockNumber
     );
 
+    event CDOValueRedeemed(
+    bytes32 cdo_id,
+    //bytes32 indexed cdo_id,
+    address recipient
+    );
+
     event LoanContractLinked(address loan);
 
+    //TODO: remove the following
+    event RVisNone(uint redeemable_per_loan, address recipient);
 
+    //TODO: cannot be public
     mapping (bytes32 => CDOLib.CDO) cdos;
 
     uint256 public constant DECIMALS = 18;
 
-    Loan public loanContract;
+    address public loanContract;
 
     //balances_redeemed_per_loan[address][cdo_id][0] is the balance_redeemed by address in the 1st loan of cdos[cdo_id]
     //TODO: make this part of CDOLib.CDO
     mapping (address => mapping(bytes32 => uint[])) balances_redeemed_per_loan;
 
     function linkLoanContract(address lc){
-        loanContract = Loan(lc);
+        loanContract = lc;
         LoanContractLinked(lc);
         //TODO: ensure that this address makes sense
     }
     // Creates a tokenized CDO, which sends the specified loans to be owned by this contract itself. Issues CDO tokens all to creator of CDO.
     function createCDO(bytes32[] loan_uuids, uint num_tokens, bytes32 cdo_id) {
-
-        CDOCreated(loan_uuids,cdo_id,num_tokens,block.number);
         //So that we can have 3-tranches.
         require(loan_uuids.length < 6);
 
@@ -61,15 +69,15 @@ contract CDO {
         cdos[cdo_id].loan_uuids = loan_uuids;
 
         for (uint8 i = 0; i < loan_uuids.length; i++) {
-            uint transferable = loanContract.balanceOf(loan_uuids[i], msg.sender);
+            uint transferable = Loan(loanContract).balanceOf(loan_uuids[i], msg.sender);
 
             //also, at this point, if msg.sender were to call redeemValue, where would the ether go??
-            loanContract.transfer(loan_uuids[i], this, transferable);
+            Loan(loanContract).transfer(loan_uuids[i], this, transferable);
             cdos[cdo_id].num_tokens_per_loan[loan_uuids[i]] = transferable;
         }
         cdos[cdo_id].token.balances[msg.sender] = num_tokens;
         cdos[cdo_id].token.totalSupply = num_tokens;
-
+        CDOCreated(loan_uuids,cdo_id,num_tokens,block.number);
     }
 
 
@@ -81,30 +89,51 @@ contract CDO {
         cdos[cdo_id].token.balances[_to] = cdos[cdo_id].token.balances[_to].add(_value);
     }
 
-    //((balanceOf(recipient) / totalSupply) * redeemableValue) - amountRedeemedByX
-    function redeemValue(bytes32 cdo_id, address recipient) {
-        //TODO: add sanity checks/assertions
 
+
+   // ((balanceOf(recipient) / totalSupply) * redeemableValue) - amountRedeemedByX
+    function redeemValue(bytes32 cdo_id, address recipient) {
+        //TODO: add modifier-based sanity checks/assertions
+
+
+        uint to_send = 0;
         for (uint8 i = 0; i < cdos[cdo_id].loan_uuids.length; i++) { //(ensure there are only 5 loans)
             bytes32 loan_uuid = cdos[cdo_id].loan_uuids[i];
-            uint balance_redeemed = balances_redeemed_per_loan[msg.sender][cdo_id][i];
-
-            uint redeemable_per_loan = loanContract.getRedeemableValue(loan_uuid, this);
-
+            uint redeemable_per_loan = Loan(loanContract).getRedeemableValue(loan_uuid, this);
+            RVisNone(redeemable_per_loan, this);
             //the following will send the redeemed ether to this token contract
-            loanContract.redeemValue(loan_uuid, this);
-            uint fraction_tokens_owned = cdos[cdo_id].token.balances[msg.sender].div(cdos[cdo_id].token.totalSupply);
-            uint redeemableValue = redeemable_per_loan.mul(fraction_tokens_owned).sub(balance_redeemed);
-            if (redeemableValue == 0)
-            throw;
+            //Loan(loanContract).redeemValue(loan_uuid, this);
+//            uint fraction_tokens_owned = cdos[cdo_id].token.balances[msg.sender].div(cdos[cdo_id].token.totalSupply);
+//            uint redeemableValue = redeemable_per_loan.mul(fraction_tokens_owned).sub(balances_redeemed_per_loan[recipient][cdo_id][i]);
+//            if (redeemableValue == 0) {
+//                RVisNone(1);
+//                //throw;
+//            }
+//
+//            balances_redeemed_per_loan[msg.sender][cdo_id][i] =
+//            balances_redeemed_per_loan[msg.sender][cdo_id][i].add(redeemableValue);
+//            to_send = to_send.add(redeemableValue);
 
-            balances_redeemed_per_loan[msg.sender][cdo_id][i] =
-            balances_redeemed_per_loan[msg.sender][cdo_id][i].add(redeemableValue);
-
-            if (!recipient.send(redeemableValue))
-            throw;
         }
+        //TODO: make the party come and receive this
+        //if (!recipient.send(to_send)) throw;
+        CDOValueRedeemed(cdo_id, recipient);
     }
+
+    //TODO: implement getter functions
+//TODO: richer naming conventions for these
+    function getLoanUUIDSFromID(bytes32 cdo_id) returns (bytes32[]) {
+        return cdos[cdo_id].loan_uuids;
+    }
+
+    function getNumTokensFromID(bytes32 cdo_id) returns (uint) {
+        return cdos[cdo_id].token.totalSupply;
+    }
+
+    function getMyBalanceFromID(bytes32 cdo_id) returns (uint) {
+        return cdos[cdo_id].token.balances[msg.sender];
+    }
+
+
 }
 
-//TODO: Implement getter functions

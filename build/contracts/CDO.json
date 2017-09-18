@@ -1,0 +1,978 @@
+{
+  "contract_name": "CDO",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "loanContract",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "lc",
+          "type": "address"
+        }
+      ],
+      "name": "linkLoanContract",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "DECIMALS",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        },
+        {
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "redeemValue",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        },
+        {
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getNumTokensFromID",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getMyBalanceFromID",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "loan_uuids",
+          "type": "bytes32[]"
+        },
+        {
+          "name": "num_tokens",
+          "type": "uint256"
+        },
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "createCDO",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "cdo_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getLoanUUIDSFromID",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "loan_uuids",
+          "type": "bytes32[]"
+        },
+        {
+          "indexed": true,
+          "name": "cdo_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "num_tokens",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "blockNumber",
+          "type": "uint256"
+        }
+      ],
+      "name": "CDOCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "cdo_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "CDOValueRedeemed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "loan",
+          "type": "address"
+        }
+      ],
+      "name": "LoanContractLinked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "redeemable_per_loan",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "RVisNone",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b5b6108f18061001f6000396000f3006060604052361561007d5763ffffffff60e060020a600035041663253f284b81146100825780632561cedb146100b15780632e0f2625146100d25780633dda8e3e146100f75780633feb1bd81461011b5780634bf25bd4146101425780638c9b69c71461016a578063a7a021e114610192578063fbab4602146101ea575b600080fd5b341561008d57600080fd5b610095610254565b604051600160a060020a03909116815260200160405180910390f35b34156100bc57600080fd5b6100d0600160a060020a0360043516610263565b005b34156100dd57600080fd5b6100e56102cc565b60405190815260200160405180910390f35b341561010257600080fd5b6100d0600435600160a060020a03602435166102d1565b005b341561012657600080fd5b6100d0600435600160a060020a036024351660443561043e565b005b341561014d57600080fd5b6100e56004356104d7565b60405190815260200160405180910390f35b341561017557600080fd5b6100e56004356104ec565b60405190815260200160405180910390f35b341561019d57600080fd5b6100d060046024813581810190830135806020818102016040519081016040528093929190818152602001838360200280828437509496505084359460200135935061051692505050565b005b34156101f557600080fd5b61020060043561078c565b60405160208082528190810183818151815260200191508051906020019060200280838360005b838110156102405780820151818401525b602001610227565b505050509050019250505060405180910390f35b600154600160a060020a031681565b6001805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790557f831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a81604051600160a060020a03909116815260200160405180910390a15b50565b601281565b60008080805b60008681526020819052604090206005015460ff841610156103f2576000868152602081905260409020600501805460ff851690811061031357fe5b906000526020600020900160005b5054600154909250600160a060020a031663599e2edf833060006040516020015260405160e060020a63ffffffff85160281526004810192909252600160a060020a03166024820152604401602060405180830381600087803b151561038657600080fd5b6102c65a03f1151561039757600080fd5b5050506040518051905090507fc33d1fc2b99a25c7390c088e84ad528926544c4525ebaef4a0b2a7c7c71ee3cd8130604051918252600160a060020a031660208201526040908101905180910390a15b6001909201916102d7565b7f5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a5488686604051918252600160a060020a031660208201526040908101905180910390a15b505050505050565b600083815260208181526040808320600160a060020a0333168452600101909152902054610472908263ffffffff6107ff16565b600084815260208181526040808320600160a060020a0333811685526001909101909252808320939093558416815220546104ad9082610818565b600084815260208181526040808320600160a060020a03871684526001019091529020555b505050565b6000818152602081905260409020545b919050565b600081815260208181526040808320600160a060020a03331684526001019091529020545b919050565b600080600685511061052757600080fd5b6000838152602081905260409020600501858051610549929160200190610844565b50600091505b84518260ff1610156106c857600154600160a060020a031663c20382368660ff85168151811061057b57fe5b906020019060200201513360006040516020015260405160e060020a63ffffffff85160281526004810192909252600160a060020a03166024820152604401602060405180830381600087803b15156105d357600080fd5b6102c65a03f115156105e457600080fd5b5050506040518051600154909250600160a060020a03169050633feb1bd88660ff85168151811061061157fe5b90602001906020020151308460405160e060020a63ffffffff86160281526004810193909352600160a060020a0390911660248301526044820152606401600060405180830381600087803b151561066857600080fd5b6102c65a03f1151561067957600080fd5b505050600083815260208190526040812082916006909101908760ff8616815181106106a157fe5b9060200190602002015181526020810191909152604001600020555b60019091019061054f565b600083815260208181526040808320600160a060020a0333168452600181018352818420889055868452929091529085905583907ff3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a2190879087904390518080602001848152602001838152602001828103825285818151815260200191508051906020019060200280838360005b8381101561076f5780820151818401525b602001610756565b5050505090500194505050505060405180910390a25b5050505050565b610794610892565b600082815260208181526040918290206005018054909290918281020190519081016040528092919081815260200182805480156107f257602002820191906000526020600020905b815481526001909101906020018083116107dd575b505050505090505b919050565b600061080d83831115610834565b508082035b92915050565b600082820161082984821015610834565b8091505b5092915050565b8015156102c957600080fd5b5b50565b828054828255906000526020600020908101928215610881579160200282015b828111156108815782518255602090920191600190910190610864565b5b5061088e9291506108a4565b5090565b60206040519081016040526000815290565b6108c291905b8082111561088e57600081556001016108aa565b5090565b905600a165627a7a723058208a2ebf08c1c69e35882d7b6e65eb51b567293c47e7a8cb2c3bc3828248eb93690029",
+  "networks": {
+    "1505461661226": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xe0507364662b9bded56ac894696b9086a00767cf",
+      "updated_at": 1505549026490
+    },
+    "1505599872696": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x427ecee526c8c7ce7ebb1068f742dbbc392f6f1bfadf7809b34458b599f1501a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "loanContractLinked",
+          "type": "event"
+        },
+        "0xd8c62a11a6fbb9c8ebad504eea2ab2bcc25e7dc6dcb985ff35d497f02156f1cb": {
+          "anonymous": false,
+          "inputs": [],
+          "name": "atHere",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xbe497e58964879fb8c0c911eb60165ba46e84654",
+      "updated_at": 1505601417360
+    },
+    "1505605146699": {
+      "links": {},
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x427ecee526c8c7ce7ebb1068f742dbbc392f6f1bfadf7809b34458b599f1501a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "loanContractLinked",
+          "type": "event"
+        },
+        "0xd8c62a11a6fbb9c8ebad504eea2ab2bcc25e7dc6dcb985ff35d497f02156f1cb": {
+          "anonymous": false,
+          "inputs": [],
+          "name": "atHere",
+          "type": "event"
+        }
+      },
+      "updated_at": 1505605409862
+    },
+    "1505687704411": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x35964071ab5b1386da12024feafe321fb1fe7c7b",
+      "updated_at": 1505688844421
+    },
+    "1505690969948": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x6127d1bcaa5f297c70582eae3249e78f62088df6",
+      "updated_at": 1505691033964
+    },
+    "1505701311603": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0xca2bdb39a489c69da504c8ed9f68de7a902838adee2a500be9ec7ed1b16d7345": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x9178f1e37918ffa7c530102931d91d7e8facbdda",
+      "updated_at": 1505701326983
+    },
+    "1505703252510": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0xca2bdb39a489c69da504c8ed9f68de7a902838adee2a500be9ec7ed1b16d7345": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x33f502f1f65d9f1c0da1bafec5cb64cee4176c23",
+      "updated_at": 1505703292470
+    },
+    "1505704782955": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a548": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x4c13c0e152a1ffeb8e43ab79bda49c8b6e1033a1",
+      "updated_at": 1505705501240
+    },
+    "1505709403196": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a548": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        },
+        "0xde857ab2df8cd6de72e26d25e01065d24fde6c7f4eda79b6d22ec211d5bee9cd": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "times_called",
+              "type": "uint256"
+            }
+          ],
+          "name": "RVisNone",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xd975ee51dcac4ed6282b78058bc9828ac7d78204",
+      "updated_at": 1505709412288
+    },
+    "1505714695640": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a548": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        },
+        "0xc33d1fc2b99a25c7390c088e84ad528926544c4525ebaef4a0b2a7c7c71ee3cd": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "redeemable_per_loan",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "RVisNone",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x15bd70047636fa8063a97f9390d6864f50b27f8c",
+      "updated_at": 1505716636030
+    },
+    "1505717420604": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a548": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        },
+        "0xc33d1fc2b99a25c7390c088e84ad528926544c4525ebaef4a0b2a7c7c71ee3cd": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "redeemable_per_loan",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "RVisNone",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xca02b0d84f49475b61edb01c7f4a956f8cca22e1",
+      "updated_at": 1505717439616
+    },
+    "1505719644784": {
+      "events": {
+        "0xf3a6f3b1bbb59e72c3a37622bbd53dbd5c1e1c1ea3439e2def9db4f611d70a21": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan_uuids",
+              "type": "bytes32[]"
+            },
+            {
+              "indexed": true,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "num_tokens",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "blockNumber",
+              "type": "uint256"
+            }
+          ],
+          "name": "CDOCreated",
+          "type": "event"
+        },
+        "0x5ab179d0960ca45c5eeaefd3b334751a2b39146d78e5ed41ffce0b07bf42a548": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "cdo_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "CDOValueRedeemed",
+          "type": "event"
+        },
+        "0x831d928afa69681acc826af5bda8acaf3b2ae92222a9f7518ab186a073af302a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "loan",
+              "type": "address"
+            }
+          ],
+          "name": "LoanContractLinked",
+          "type": "event"
+        },
+        "0xc33d1fc2b99a25c7390c088e84ad528926544c4525ebaef4a0b2a7c7c71ee3cd": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "redeemable_per_loan",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "name": "RVisNone",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x218af004d544fb60655515c1e72369787155d6da",
+      "updated_at": 1505719656452
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1505719656452
+}

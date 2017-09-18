@@ -17,5 +17,23 @@ module.exports = {
                 blockNumber: params.blockNumber
             }
         }
+    },
+    CDOValueRedeemed(params) {
+        return {
+            event: 'CDOValueRedeemed',
+            args: {
+                cdo_id: params.cdo_id,
+                recipient: params.recipient
+            }
+        }
+    },
+    RVisNone(params) {
+        return {
+            event: 'RVisNone',
+            args: {
+                redeemable_per_loan: params.redeemable_per_loan,
+                recipient: params.recipient
+            }
+        }
     }
 }
