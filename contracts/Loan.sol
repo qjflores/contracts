@@ -282,7 +282,6 @@ contract Loan {
   */
   function transfer(bytes32 uuid, address _to, uint _value) {
     loans[uuid].token.transfer(uuid, _to, _value);
-
   }
 
   /**
@@ -305,7 +304,7 @@ contract Loan {
   }
 
   /**
-   * @dev Aprove the passed address to spend the specified amount of tokens on beahlf of msg.sender.
+   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
@@ -317,7 +316,7 @@ contract Loan {
    * @dev Function to check the amount of tokens than an owner allowed to a spender.
    * @param _owner address The address which owns the funds.
    * @param _spender address The address which will spend the funds.
-   * @return A uint specifing the amount of tokens still avaible for the spender.
+   * @return A uint specifying the amount of tokens still available for the spender.
    */
   function allowance(bytes32 uuid, address _owner, address _spender) constant returns (uint remaining) {
     return loans[uuid].token.allowance(_owner, _spender);

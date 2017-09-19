@@ -14,7 +14,8 @@ module.exports = {
                 loan_uuids: params.loan_uuids,
                 cdo_id: params.cdo_id,
                 num_tokens: params.num_tokens,
-                blockNumber: params.blockNumber
+                blockNumber: params.blockNumber,
+                cdoCreator: params.cdoCreator
             }
         }
     },
