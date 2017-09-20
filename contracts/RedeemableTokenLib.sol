@@ -65,9 +65,9 @@ library RedeemableTokenLib {
   * @param _value The amount to be transferred.
   */
   function transfer(Accounting storage self, bytes32 uuid, address _to, uint _value) onlyPayloadSize(2 * 32) {
-    self.balances[msg.sender] = self.balances[msg.sender].sub(_value);
+    self.balances[tx.origin] = self.balances[tx.origin].sub(_value);
     self.balances[_to] = self.balances[_to].add(_value);
-    Transfer(uuid, msg.sender, _to, _value, block.number);
+    Transfer(uuid, tx.origin, _to, _value, block.number);
   }
 
   /**
@@ -130,18 +130,18 @@ library RedeemableTokenLib {
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
   function redeemValue(Accounting storage self, bytes32 uuid, address recipient) {
-    uint redeemableValue = getRedeemableValue(self, msg.sender);
+    uint redeemableValue = getRedeemableValue(self, tx.origin);
 
     if (redeemableValue == 0)
       throw;
 
-    self.balanceRedeemed[msg.sender] =
-      self.balanceRedeemed[msg.sender].add(redeemableValue);
+    self.balanceRedeemed[tx.origin] =
+      self.balanceRedeemed[tx.origin].add(redeemableValue);
 
     if (!recipient.send(redeemableValue))
       throw;
 
-    ValueRedeemed(uuid, msg.sender, recipient, redeemableValue, block.number);
+    ValueRedeemed(uuid, tx.origin, recipient, redeemableValue, block.number);
   }
 
   function getRedeemableValue(Accounting storage self, address investor) returns (uint) {

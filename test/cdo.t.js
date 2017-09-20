@@ -9,7 +9,7 @@ import {LoanCreated, LoanTermBegin,
     LoanBidsRejected, PeriodicRepayment,
     ValueRedeemed, Transfer, Approval} from './utils/LoanEvents.js'
 
-import {LoanContractLinked, CDOCreated, CDOValueRedeemed} from './utils/CDOEvents.js'
+import {LoanContractLinked, CDOCreated, CDOValueRedeemed, CDOTransfer} from './utils/CDOEvents.js'
 
 import expect from 'expect.js';
 import Random from 'random-js';
@@ -643,7 +643,6 @@ contract("Loan", (accounts) => {
             });
 
             //TODO: gasCosts1 should have value, this is a JS thing.
-            //const expectedInvestorOneRedeemable = (web3.toBigNumber(LOAN.principal).sub(web3.toBigNumber(gasCosts1))).div(5);
             const expectedInvestorOneRedeemable = web3.fromWei(web3.toBigNumber(LOAN.principal).sub(web3.toBigNumber(gasCosts1)).div(10),'ether');
 
             describe('getRedeemableValue() before', () => {
@@ -651,13 +650,6 @@ contract("Loan", (accounts) => {
                     const investorOneRedeemable =
                         await loan.getRedeemableValue
                             .call(LOAN.uuid, INVESTORS[1])
-
-
-                    // const expectedBalance1 =
-                    //     web3.toBigNumber(web3.toWei(0.2, 'ether'))
-                    //         .times(LOAN.principal)
-                    //         .div(totalInvested1)
-                    //         .trunc();
 
                     //TODO: beware of this .round() below; gas counts for discrepency
                     expect(web3.fromWei(web3.toBigNumber(investorOneRedeemable),'ether').mul(10).round(0,2).div(10).toString()).to.be(expectedInvestorOneRedeemable.toString());
@@ -675,110 +667,14 @@ contract("Loan", (accounts) => {
                     const amountRedeemed = balanceAfter.minus(balanceBefore).plus(gasCosts);
 
                     //TODO: beware of this .round() below; what counts for discrepency?
-                    //toString(), like other expect statements, so that test failure easier to read
                     expect(web3.fromWei(amountRedeemed,'ether').round(1).toString()).to.be(expectedInvestorOneRedeemable.toString());
-                    //expect(amountRedeemed.toString()).to.be(expectedInvestorOneRedeemable.toString());
-
                     //TODO:this bellow fails
-                    // util.assertEventEquality(result.logs[0], ValueRedeemed({
-                    //     uuid: LOAN.uuid,
-                    //     investor: INVESTORS[0],
-                    //     recipient: INVESTORS[0],
-                    //     value: expectedInvestorOneRedeemable,
-                    //     blockNumber: result.receipt.blockNumber
-                    // }))
+
                 })
 
             })
         })
 
-        // describe('second repayment', async () => {
-        //     const expectedInvestorOneRedeemable = web3.toWei(0.06, 'ether');
-        //     const expectedInvestorTwoRedeemable = web3.toWei(0.64, 'ether');
-        //
-        //     before(async () => {
-        //         await loan.periodicRepayment(LOAN.uuid,
-        //             {value: web3.toWei(0.3, 'ether')})
-        //     });
-        //
-        //     describe('getRedeemableValue() before', () => {
-        //         it('should retrieve correct values', async () => {
-        //             const investorOneRedeemable =
-        //                 await loan.getRedeemableValue
-        //                     .call(LOAN.uuid, INVESTORS[0])
-        //             const investorTwoRedeemable =
-        //                 await loan.getRedeemableValue
-        //                     .call(LOAN.uuid, INVESTORS[1])
-        //
-        //             expect(investorOneRedeemable.equals(expectedInvestorOneRedeemable))
-        //                 .to.be(true)
-        //             expect(investorTwoRedeemable.equals(expectedInvestorTwoRedeemable))
-        //                 .to.be(true)
-        //         })
-        //     })
-        //
-        //     describe('redeemValue()', () => {
-        //         it('should redeem the correct amount for investor 1', async () => {
-        //             const balanceBefore = web3.eth.getBalance(INVESTORS[0])
-        //             const result = await loan.redeemValue(LOAN.uuid,
-        //                 INVESTORS[0], {from: INVESTORS[0]});
-        //             const gasCosts = await util.getGasCosts(result);
-        //             const balanceAfter = web3.eth.getBalance(INVESTORS[0])
-        //             const amountRedeemed =
-        //                 balanceAfter.minus(balanceBefore).plus(gasCosts);
-        //
-        //             expect(amountRedeemed.equals(expectedInvestorOneRedeemable)).to.be(true);
-        //
-        //             util.assertEventEquality(result.logs[0], ValueRedeemed({
-        //                 uuid: LOAN.uuid,
-        //                 investor: INVESTORS[0],
-        //                 recipient: INVESTORS[0],
-        //                 value: expectedInvestorOneRedeemable,
-        //                 blockNumber: result.receipt.blockNumber
-        //             }))
-        //         })
-        //
-        //         it('should not let investor 1 redeem any more value', async () => {
-        //             try {
-        //                 await loan.redeemValue(LOAN.uuid,
-        //                     INVESTORS[0], {from: INVESTORS[0]});
-        //                 expect().fail("should throw error");
-        //             } catch (err) {
-        //                 util.assertThrowMessage(err)
-        //             }
-        //         })
-        //
-        //         it('should redeem the correct amount for investor 2', async () => {
-        //             const balanceBefore = web3.eth.getBalance(INVESTORS[1]);
-        //             const result = await loan.redeemValue(LOAN.uuid,
-        //                 INVESTORS[1], {from: INVESTORS[1]});
-        //             const gasCosts = await util.getGasCosts(result);
-        //             const balanceAfter = web3.eth.getBalance(INVESTORS[1])
-        //             const amountRedeemed =
-        //                 balanceAfter.minus(balanceBefore).plus(gasCosts);
-        //
-        //             expect(amountRedeemed.equals(expectedInvestorTwoRedeemable)).to.be(true);
-        //
-        //             util.assertEventEquality(result.logs[0], ValueRedeemed({
-        //                 uuid: LOAN.uuid,
-        //                 investor: INVESTORS[1],
-        //                 recipient: INVESTORS[1],
-        //                 value: expectedInvestorTwoRedeemable,
-        //                 blockNumber: result.receipt.blockNumber
-        //             }))
-        //         })
-        //
-        //         it('should not let investor 2 redeem any more value', async () => {
-        //             try {
-        //                 await loan.redeemValue(LOAN.uuid,
-        //                     INVESTORS[1], {from: INVESTORS[1]});
-        //                 expect().fail("should throw error");
-        //             } catch (err) {
-        //                 util.assertThrowMessage(err)
-        //             }
-        //         })
-        //     });
-        // })
 
     })
 
@@ -958,8 +854,6 @@ contract("Loan", (accounts) => {
 
         it("should give CDO creator's correct loan1 balances", async () => {
             creator_loan1_bal = await loan.balanceOf.call(LOAN.uuid, accounts[2]);
-            //console.log(web3.fromWei(creator_loan1_bal).toString());
-            //expect(web3.fromWei(creator_loan1_bal).toString()).to.be(.2-(web3.fromWei(gasCosts1,'ether')/5));
 
             const totalInvested1 =
                 web3.toBigNumber(LOAN.principal).plus(LOAN.attestorFee)
@@ -971,13 +865,11 @@ contract("Loan", (accounts) => {
 
             let balance1 = await loan.balanceOf(LOAN.uuid, accounts[2]);
             expect(balance1.toString()).to.be(expectedBalance1.toString());
-            //creator_bal  = [creator_loan1_bal,creator_loan2_bal];
         })
 
         it("should give CDO creator's correct loan2 balances", async () => {
             creator_loan2_bal = await loan.balanceOf.call(LOAN2.uuid,accounts[2]);
-            console.log(web3.fromWei(creator_loan2_bal).toString());
-            //expect(web3.fromWei(creator_loan1_bal).toString()).to.be(.2-(web3.fromWei(gasCosts1,'ether')/5));
+
 
             const totalInvested2 =
                 web3.toBigNumber(LOAN2.principal).plus(LOAN2.attestorFee)
@@ -989,7 +881,6 @@ contract("Loan", (accounts) => {
 
             let balance2 = await loan.balanceOf(LOAN2.uuid, accounts[2]);
             expect(balance2.toString()).to.be(expectedBalance2.toString());
-            //creator_bal  = [creator_loan1_bal,creator_loan2_bal];
         })
 
         it("should allow user to link loan contract to this CDO", async () => {
@@ -999,10 +890,8 @@ contract("Loan", (accounts) => {
         })
 
         it("should allow user to createCDO", async () => {
-            //const result4 = await cdo.test_printmsgsender(accounts[2],{from: accounts[2]});
             const result4 = await cdo.createCDO(CDO_DATA.loan_uuids, CDO_DATA.num_tokens, CDO_DATA.cdo_id, accounts[2],{from: accounts[2]});
-            //const result4 = await cdo.createCDO(CDO_DATA.loan_uuids, CDO_DATA.num_tokens, CDO_DATA.cdo_id, accounts[2]);
-            console.log(accounts[2])
+
             util.assertEventEquality(result4.logs[0], CDOCreated({
                 loan_uuids: CDO_DATA.loan_uuids,
                 cdo_id: CDO_DATA.cdo_id,
@@ -1015,15 +904,14 @@ contract("Loan", (accounts) => {
 
     describe('#cdo_getters()', () => {
         it("CDO should have correct num_tokens", async () => {
-            //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
             var numtokens = await cdo.getNumTokensFromID.call(CDO_DATA.cdo_id);
-            expect(web3.toString(numtokens)).to.be(web3.toString(CDO_DATA.num_tokens));
+            expect(numtokens.toString()).to.be(CDO_DATA.num_tokens.toString());
         })
 
         it("CDO creator should have all tokens", async () => {
             //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
-            var creator_tokens = await cdo.getMyBalanceFromID(CDO_DATA.cdo_id);
-            expect(web3.toString(creator_tokens)).to.be(web3.toString(CDO_DATA.num_tokens));
+            var creator_tokens = await cdo.getMyBalanceFromID.call(CDO_DATA.cdo_id, {from: accounts[2]});
+            expect((web3.toBigNumber(creator_tokens)).toString()).to.be((100).toString());
         })
 
         // it("CDO should have all tokens", async () => {
@@ -1031,13 +919,10 @@ contract("Loan", (accounts) => {
         //     const CDOContractRedeemable =
         //     await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
         // })
-
-
     })
 
     describe('#cdo()', () => {
         it(" CDO contract should've received tokens from loanContract", async () => {
-            //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
             let contract_tokens_loan1 = await loan.balanceOf.call(LOAN.uuid, cdo.address);
 
             const totalInvested =
@@ -1062,66 +947,45 @@ contract("Loan", (accounts) => {
             expect(contract_tokens_loan2.toString()).to.be(expected_balance2.toString());
         })
 
+        before(async () => {
+            await loan.periodicRepayment(LOAN.uuid,
+                {value: web3.toWei(0.5, 'ether')})
+        });
+
         it(" CDO holder should be able to redeem tokens from CDO", async () => {
             const totalInvested =
                 web3.toBigNumber(LOAN.principal).plus(LOAN.attestorFee)
             const expectedCDOContractRedeemable =
                 web3.toBigNumber(web3.toWei(0.2, 'ether'))
                     .times(LOAN.principal)
-                    .div(totalInvested).div(2)
+                    .div(totalInvested)
                     .trunc();
-
-            before(async () => {
-                await loan.periodicRepayment(LOAN.uuid,
-                    {value: web3.toWei(0.5, 'ether')})
-            });
-
-            it('should retrieve correct CDO redeemable values', async () => {
-                const CDOContractRedeemable =
-                    await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
-                expect(CDOContractRedeemable.toString()).to.be(expectedCDOContractRedeemable.toString())
-            })
-
-            it('should redeem the correct amount for investor 1', async () => {
-                const balanceBefore = web3.eth.getBalance(accounts[2]);
-                const res = await loan.redeemValue(LOAN.uuid,
-                    accounts[2], {from: accounts[2]});
-                const gasCosts = await util.getGasCosts(res);
-            })
-
-            it("CDO contract redeems the correct amount and sends it to correct recipient address", async () => {
-
-                // var redeemable_loan1 = await loan.getRedeemableValue.call(LOAN.uuid,cdo.address);
-                // var redeemable_loan2 = await loan.getRedeemableValue.call(LOAN2.uuid,cdo.address);
-                //
-                // const creatorBalanceBefore = web3.eth.getBalance(accounts[2]);
-                //const result5 = await cdo.redeemValue(CDO_DATA.cdo_id, accounts[2]);
-                console.log(accounts[2]);
-                console.log(LOAN.uuid);
-                //await loan.getRedeemableValue.call(LOAN.uuid, INVESTORS[0])
-                //const res = await loan.getRedeemableValue.call(LOAN.uuid, accounts[2]);
-                const res = await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
-                //console.log(res.logs[0]);
-                const result5 = await cdo.redeemValue(CDO_DATA.cdo_id, accounts[2]);
-
-                util.assertEventEquality(result5.logs[0], CDOValueRedeemed({
-                    cdo_id: CDO_DATA.cdo_id,
-                    recipient: accounts[2]
-                }))
-                //
-                //             // const gasCosts = await util.getGasCosts(result5);
-                //             //
-                //             //
-                //             // //cdo.call(cdos)[cdo_id].token.balances[msg.sender] = num_tokens;
-                //             // console.log(web3.toString(web3.fromWei(redeemable_loan1, 'ether')))
-                //             // console.log(redeemable_loan2.toString())
-                //             // console.log(accounts[2])
-                //             // const creatorBalanceAfter = web3.eth.getBalance(accounts[2]);
-                //             // expect(creatorBalanceAfter.minus(creatorBalanceBefore).plus(gasCosts)).to.be(redeemable_loan1 + redeemable_loan2);
-                //             // //
-                //             // // CDOValueRedeemed(cdo_id, recipient, to_send);
-                //             // //
-            })
+            const CDOContractRedeemable = await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
+            expect(CDOContractRedeemable.toString()).to.be(expectedCDOContractRedeemable.toString())
         })
+
+        it("CDO contract redeems the correct amount and sends it to correct recipient address", async () => {
+            const res = await loan.getRedeemableValue.call(LOAN.uuid, cdo.address);
+            const result5 = await cdo.redeemValue(CDO_DATA.cdo_id, accounts[2]);
+
+            util.assertEventEquality(result5.logs[0], CDOValueRedeemed({
+                cdo_id: CDO_DATA.cdo_id,
+                recipient: accounts[2]
+            }))
+
+        })
+
+         it("CDO creator can transfer CDO tokens to recipient", async () => {
+            const result7 = await cdo.transfer(CDO_DATA.cdo_id, accounts[5], 50, {from: accounts[2]});
+
+            util.assertEventEquality(result7.logs[0], CDOTransfer({
+                cdo_id: CDO_DATA.cdo_id,
+                from: accounts[2],
+                to: accounts[5],
+                value: 50
+            }))
+
+
+         })
     })
 })

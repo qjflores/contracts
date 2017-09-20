@@ -28,12 +28,14 @@ module.exports = {
             }
         }
     },
-    RVisNone(params) {
+    CDOTransfer(params) {
         return {
-            event: 'RVisNone',
+            event: 'CDOTransfer',
             args: {
-                redeemable_per_loan: params.redeemable_per_loan,
-                recipient: params.recipient
+                cdo_id: params.cdo_id,
+                from: params.from,
+                to: params.to,
+                value: params.value
             }
         }
     }
