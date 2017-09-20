@@ -222,7 +222,7 @@ contract("Loan", (accounts) => {
 
       const numBids = await loan.getNumBids.call(LOAN.uuid);
       for (let i = 0; i < numBids; i++) {
-        let bid = await loan.getBid.call(LOAN.uuid, i);
+        let bid = await loan.getBidByIndex.call(LOAN.uuid, i);
         let investor = bid[0];
         expect(bid[1].equals(bids[investor].amount)).to.be(true);
         expect(bid[2].equals(bids[investor].minInterestRate)).to.be(true);
@@ -274,6 +274,7 @@ contract("Loan", (accounts) => {
           web3.toWei(0.1, 'ether'),
           { from: INVESTORS[0], value: web3.toWei(0.1, 'ether') }
         )
+        console.log('here')
         expect().fail("should throw error")
       } catch (err) {
         util.assertThrowMessage(err)
@@ -378,6 +379,9 @@ contract("Loan", (accounts) => {
       const gasCosts = await util.getGasCosts(result);
       const borrowerBalanceAfter = web3.eth.getBalance(LOAN.borrower);
       const attestorBalanceAfter = web3.eth.getBalance(LOAN.attestor);
+
+      console.log(borrowerBalanceAfter
+        .minus(borrowerBalanceBefore).plus(gasCosts));
 
       expect(borrowerBalanceAfter
         .minus(borrowerBalanceBefore).plus(gasCosts).equals(LOAN.principal))
