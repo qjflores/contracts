@@ -23,8 +23,7 @@ module.exports = {
         return {
             event: 'CDOValueRedeemed',
             args: {
-                cdo_id: params.cdo_id,
-                recipient: params.recipient
+                cdo_id: params.cdo_id
             }
         }
     },
@@ -36,6 +35,16 @@ module.exports = {
                 from: params.from,
                 to: params.to,
                 value: params.value
+            }
+        }
+    },
+    Withdrawal(params) {
+        return {
+            event: 'Withdrawal',
+            args: {
+                cdo_id: params.cdo_id,
+                amount: params.amount,
+                recipient: params.recipient
             }
         }
     }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.15;
 
 import "./LoanLib.sol";
 import "./RedeemableTokenLib.sol";
@@ -331,7 +331,10 @@ contract Loan {
     loans[uuid].token.redeemValue(uuid, recipient);
   }
 
+
   function getRedeemableValue(bytes32 uuid, address investor) returns (uint) {
     return loans[uuid].token.getRedeemableValue(investor);
   }
+
+
 }

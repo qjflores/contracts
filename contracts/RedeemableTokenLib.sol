@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.15;
 
 import './SafeMath.sol';
 
@@ -27,12 +27,21 @@ library RedeemableTokenLib {
     uint blockNumber
   );
 
+//  event ValueRedeemed(
+//    bytes32 indexed uuid,
+//    //address indexed investor,
+//    address  investor,
+//    address indexed recipient,
+//    uint value,
+//    uint blockNumber
+//  );
+
   event ValueRedeemed(
-    bytes32 indexed uuid,
-    address indexed investor,
-    address indexed recipient,
-    uint value,
-    uint blockNumber
+  bytes32 indexed uuid,
+  address investor,
+  address recipient,
+  uint value,
+  uint blockNumber
   );
 
   struct Accounting {
@@ -130,19 +139,28 @@ library RedeemableTokenLib {
       ((amountXInvested / totalSupply) * redeemableValue) - amountRedeemedByX
   */
   function redeemValue(Accounting storage self, bytes32 uuid, address recipient) {
-    uint redeemableValue = getRedeemableValue(self, tx.origin);
+    uint redeemableValue = 0;
+    redeemableValue = getRedeemableValue(self, msg.sender);
+    if (redeemableValue == 0) throw;
+    assert(redeemableValue<this.balance);
+    self.balanceRedeemed[msg.sender] =
+    self.balanceRedeemed[msg.sender].add(redeemableValue);
 
-    if (redeemableValue == 0)
-      throw;
+    msg.sender.transfer(redeemableValue);
 
-    self.balanceRedeemed[tx.origin] =
-      self.balanceRedeemed[tx.origin].add(redeemableValue);
-
-    if (!recipient.send(redeemableValue))
-      throw;
-
-    ValueRedeemed(uuid, tx.origin, recipient, redeemableValue, block.number);
+    //ValueRedeemed(uuid, msg.sender, recipient, redeemableValue, block.number);
   }
+
+//  function send_Ether(){
+//    msg.sender.send(10);
+//  }
+
+//
+//  function payout(address recipient) {
+//    uint redeemableValue = getRedeemableValue(self, msg.sender);
+//    assert(redeemableValue)
+//    recipient.transfer(redeemableValue);
+//  }
 
   function getRedeemableValue(Accounting storage self, address investor) returns (uint) {
     return balanceOf(self, investor).mul(self.totalValueAccrued)
