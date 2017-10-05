@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 module.exports = {
   PERIOD_TYPE: {
     DAILY: 0,
@@ -13,5 +15,9 @@ module.exports = {
     REVIEW: 2,
     ACCEPTED: 3,
     REJECTED: 4
+  },
+
+  DEFAULT_TX_PARAMS: {
+    gasPrice: new BigNumber(22000000000)
   }
 }

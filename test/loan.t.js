@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import uuidV4 from 'uuid/V4';
 import {web3, util} from './init.js';
-import {PERIOD_TYPE, LOAN_STATE} from './utils/Constants.js';
+import {PERIOD_TYPE, LOAN_STATE, DEFAULT_TX_PARAMS} from './utils/Constants.js';
 import LoanFactory from './utils/LoanFactory.js';
 import {LoanCreated, LoanTermBegin,
   LoanBidsRejected, PeriodicRepayment,
@@ -374,7 +374,7 @@ contract("Loan", (accounts) => {
       ]
 
       const result = await loan.acceptBids(LOAN.uuid, INVESTORS.slice(0, 5),
-        bidAmountsAccepted, { from: LOAN.borrower })
+        bidAmountsAccepted, Object.assign(DEFAULT_TX_PARAMS, { from: LOAN.borrower }));
 
       const gasCosts = await util.getGasCosts(result);
       const borrowerBalanceAfter = web3.eth.getBalance(LOAN.borrower);
@@ -593,7 +593,7 @@ contract("Loan", (accounts) => {
         for (let i = 0; i < INVESTORS.length; i++) {
           const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
           const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-            { from: INVESTORS[i] })
+            Object.assign(DEFAULT_TX_PARAMS, { from: INVESTORS[i] }));
           const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
           const gasCosts = await util.getGasCosts(result);
           const investmentAmount = i < 5 ? acceptedBids[i].amount : 0;
@@ -649,7 +649,7 @@ contract("Loan", (accounts) => {
         for (let i = 0; i < INVESTORS.length; i++) {
           const balanceBefore = web3.eth.getBalance(INVESTORS[i]);
           const result = await loan.withdrawInvestment(withdrawalTestLoan.uuid,
-            { from: INVESTORS[i] })
+            Object.assign(DEFAULT_TX_PARAMS, { from: INVESTORS[i] }));
           const balanceAfter = web3.eth.getBalance(INVESTORS[i]);
           const gasCosts = await util.getGasCosts(result);
 
@@ -842,7 +842,7 @@ contract("Loan", (accounts) => {
         it('should redeem the correct amount for investor 1', async () => {
           const balanceBefore = web3.eth.getBalance(INVESTORS[0])
           const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-            INVESTORS[0], { from: INVESTORS[0] });
+            INVESTORS[0], Object.assign(DEFAULT_TX_PARAMS, { from: INVESTORS[0] }));
           const gasCosts = await util.getGasCosts(result);
           const balanceAfter = web3.eth.getBalance(INVESTORS[0])
           const amountRedeemed =
@@ -900,7 +900,7 @@ contract("Loan", (accounts) => {
         it('should redeem the correct amount for investor 1', async () => {
           const balanceBefore = web3.eth.getBalance(INVESTORS[0])
           const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-            INVESTORS[0], { from: INVESTORS[0] });
+            INVESTORS[0], Object.assign(DEFAULT_TX_PARAMS, { from: INVESTORS[0] }));
           const gasCosts = await util.getGasCosts(result);
           const balanceAfter = web3.eth.getBalance(INVESTORS[0])
           const amountRedeemed =
@@ -930,7 +930,7 @@ contract("Loan", (accounts) => {
         it('should redeem the correct amount for investor 2', async () => {
           const balanceBefore = web3.eth.getBalance(INVESTORS[1])
           const result = await loan.redeemValue(redeemableTokenTestLoan.uuid,
-            INVESTORS[1], { from: INVESTORS[1] });
+            INVESTORS[1], Object.assign(DEFAULT_TX_PARAMS, { from: INVESTORS[1] }));
           const gasCosts = await util.getGasCosts(result);
           const balanceAfter = web3.eth.getBalance(INVESTORS[1])
           const amountRedeemed =

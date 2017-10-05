@@ -1,10 +1,12 @@
+import {DEFAULT_TX_PARAMS} from './Constants';
+
 const expect = require('expect.js');
 const BigNumber = require('bignumber.js')
 
 class Util {
   constructor(web3) {
     this.web3 = web3;
-    this.gasPrice = web3.eth.gasPrice;
+    this.gasPrice = DEFAULT_TX_PARAMS.gasPrice;
   }
 
   setTimeForward(timeDiff) {
