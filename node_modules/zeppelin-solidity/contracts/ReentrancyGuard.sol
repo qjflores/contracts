@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
 /**
  * @title Helps contracts guard agains rentrancy attacks.
@@ -9,7 +9,7 @@ pragma solidity ^0.4.8;
 contract ReentrancyGuard {
 
   /**
-   * @dev We use a single lock for the whole contract. 
+   * @dev We use a single lock for the whole contract.
    */
   bool private rentrancy_lock = false;
 
@@ -22,13 +22,10 @@ contract ReentrancyGuard {
    * wrapper marked as `nonReentrant`.
    */
   modifier nonReentrant() {
-    if(rentrancy_lock == false) {
-      rentrancy_lock = true;
-      _;
-      rentrancy_lock = false;
-    } else {
-      throw;
-    }
+    require(!rentrancy_lock);
+    rentrancy_lock = true;
+    _;
+    rentrancy_lock = false;
   }
 
 }

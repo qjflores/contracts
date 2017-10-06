@@ -3,7 +3,7 @@ var SafeMath = artifacts.require('./SafeMath.sol');
 var RedeemableTokenLib = artifacts.require("./RedeemableTokenLib.sol");
 var LoanLib = artifacts.require('./LoanLib.sol');
 var Loan = artifacts.require("./Loan.sol");
-var Metadata = require("../ethpm.json");
+var Metadata = require("../package.json");
 var semver = require('semver');
 
 module.exports = function(deployer, network, accounts) {
