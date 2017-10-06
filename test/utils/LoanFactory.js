@@ -69,6 +69,46 @@ class LoanFactory {
     await this.contract.rejectBids(loan.uuid);
   }
 
+  /**
+   * Generate a funded loan in the "Accepted" state for test purposes.
+   *
+   * @param  accounts     An array of accounts available for testing usage
+   * @param  principal    Principal amount in Wei
+   * @param  interestRate Interest rate in standard decimal
+   * @return loanData     Object containing metadata about the loan (see below)
+   */
+  async generateTestLoan(accounts, principal, interestRate) {
+    const loanData = {
+      uuid: web3.sha3(uuidV4()),
+      borrower: accounts[0],
+      principal: principal,
+      terms: {
+        version: web3.sha3("0.1.0"),
+        periodType: PERIOD_TYPE.WEEKLY,
+        periodLength: 1,
+        termLength: 4,
+        compounded: true
+      },
+      attestor: accounts[1],
+      attestorFee: web3.toWei(0.001, 'ether'),
+      defaultRisk: web3.toWei(0.73, 'ether')
+    };
+
+    const submittedBids = [{
+      bidder: accounts[0],
+      amount: 2,
+      minInterestRate: interestRate
+    }];
+    const acceptedBids = [{
+      bidder: accounts[0],
+      amount: 1.001
+    }];
+
+    await this.generateAcceptedStateLoan(loanData, submittedBids, acceptedBids);
+
+    return loanData;
+  }
+
   static _generateTermsByteString(terms) {
     let version = util.stripZeroEx(terms.version);
     let periodType = util.stripZeroEx(web3.toHex(terms.periodType))
