@@ -9,7 +9,7 @@ import {LoanCreated, LoanTermBegin,
 import expect from 'expect.js';
 import Random from 'random-js';
 
-const Loan = artifacts.require("./Loan.sol");
+const Loan = artifacts.require("./LoanRegistry.sol");
 contract("Loan", (accounts) => {
   const TERMS_SCHEMA_VERSION = "0.1.0";
   const LOAN_DATA = {

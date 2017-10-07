@@ -1,5 +1,5 @@
 const VersionRegister = artifacts.require("./VersionRegister.sol");
-const Loan = artifacts.require('./Loan.sol');
+const Loan = artifacts.require('./LoanLib.sol');
 const Metadata = require('../package.json');
 import {web3, util} from './init.js';
 const expect = require('expect.js');

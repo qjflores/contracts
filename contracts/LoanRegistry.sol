@@ -5,7 +5,7 @@ import "./RedeemableTokenLib.sol";
 
 
 /**
- * @title Loan
+ * @title LoanRegistry
  *
  * @dev Simple unsecured loan implementation with simple interest.
  * @dev Heavily based on the CrowdsaleToken contract in the
@@ -13,7 +13,7 @@ import "./RedeemableTokenLib.sol";
  * @dev The loan contract stores data associated with all unsecured loans
  *        in the Dharma Network's v0.1.0 release.
  */
-contract Loan {
+contract LoanRegistry {
   using LoanLib for LoanLib.Loan;
   using RedeemableTokenLib for RedeemableTokenLib.Accounting;
   /**
