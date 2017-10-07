@@ -1,4 +1,5 @@
-<img src="https://s3-us-west-2.amazonaws.com/dharma-assets/DharmaLogoGoldbyBlack.png"  style="width: 200px;"/>
+<img src="https://s3-us-west-2.amazonaws.com/dharma-assets/DharmaLogoGoldbyBlack.png"  width=200/>
+
 ------------
 
 [Dharma](https://dharma.io) is a protocol for generic tokenized debt issuance and fundraising on blockchains supporting requisite smart contract functionality (i.e. EVM blockchains).  For a full description of the protocol's mechanics, a thorough overview can be found in the [Dharma Protocol Whitepaper](https://dharma.io/whitepaper).  This repository contains the core contracts that compromise the business logic for issuing and administering debt crypto-assets on-chain.
